@@ -94,7 +94,10 @@ enum bpf_cmd {
 	BPF_MAP_GET_FD_BY_ID,
 	BPF_OBJ_GET_INFO_BY_FD,
 	BPF_PROG_QUERY,
+<<<<<<< HEAD
 	BPF_BTF_LOAD = 18,
+=======
+>>>>>>> 043ad55723c1 (BACKPORT: bpf: introduce BPF_PROG_QUERY command)
 };
 
 enum bpf_map_type {
@@ -331,6 +334,7 @@ union bpf_attr {
 		__aligned_u64	prog_ids;
 		__u32		prog_cnt;
 	} query;
+<<<<<<< HEAD
 
 	struct { /* anonymous struct for BPF_BTF_LOAD */
 		__aligned_u64	btf;
@@ -339,6 +343,8 @@ union bpf_attr {
 		__u32		btf_log_size;
 		__u32		btf_log_level;
 	};
+=======
+>>>>>>> 043ad55723c1 (BACKPORT: bpf: introduce BPF_PROG_QUERY command)
 } __attribute__((aligned(8)));
 
 /* BPF helper function descriptions:
@@ -673,6 +679,12 @@ union bpf_attr {
  *	@key: key to insert/update sock in map
  *	@flags: same flags as map update elem
  *
+ * int bpf_xdp_adjust_meta(xdp_md, delta)
+ *     Adjust the xdp_md.data_meta by delta
+ *     @xdp_md: pointer to xdp_md
+ *     @delta: An positive/negative integer to be added to xdp_md.data_meta
+ *     Return: 0 on success or negative on error
+ *
  * int skb_load_bytes_relative(const struct sk_buff *skb, u32 offset, void *to, u32 len, u32 start_header)
  * 	Description
  * 		This helper is similar to **bpf_skb_load_bytes**\ () in that
@@ -696,7 +708,6 @@ union bpf_attr {
  * 	Return
  * 		0 on success, or a negative error in case of failure.
  *
-<<<<<<< HEAD
  * int bpf_bind(ctx, addr, addr_len)
  *     Bind socket to address. Only binding to IP is supported, no port can be
  *     set in addr.
@@ -704,8 +715,6 @@ union bpf_attr {
  *     @addr: pointer to struct sockaddr to bind socket to
  *     @addr_len: length of sockaddr structure
  *     Return: 0 on success or negative error code
-=======
->>>>>>> 06a058758805 (BACKPORT: bpf: add skb_load_bytes_relative helper)
  */
 #define __BPF_FUNC_MAPPER(FN)		\
 	FN(unspec),			\
@@ -917,7 +926,7 @@ struct __sk_buff {
 	__u32 data_end;
 	__u32 napi_id;
 
-	/* accessed by BPF_PROG_TYPE_sk_skb types */
+	/* Accessed by BPF_PROG_TYPE_sk_skb types from here to ... */
 	__u32 family;
 	__u32 remote_ip4;	/* Stored in network byte order */
 	__u32 local_ip4;	/* Stored in network byte order */
@@ -925,6 +934,9 @@ struct __sk_buff {
 	__u32 local_ip6[4];	/* Stored in network byte order */
 	__u32 remote_port;	/* Stored in network byte order */
 	__u32 local_port;	/* stored in host byte order */
+	/* ... here. */
+
+	__u32 data_meta;
 };
 
 struct bpf_tunnel_key {
@@ -994,6 +1006,7 @@ enum xdp_action {
 struct xdp_md {
 	__u32 data;
 	__u32 data_end;
+	__u32 data_meta;
 };
 
 enum sk_action {
