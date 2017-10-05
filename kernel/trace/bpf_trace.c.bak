@@ -638,8 +638,10 @@ static const struct bpf_func_proto bpf_get_stackid_proto_tp = {
 	.arg3_type	= ARG_ANYTHING,
 };
 
+<<<<<<< HEAD
 static const struct bpf_func_proto *
 tp_prog_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
+=======
 BPF_CALL_3(bpf_perf_prog_read_value_tp, struct bpf_perf_event_data_kern *, ctx,
 	   struct bpf_perf_event_value *, buf, u32, size)
 {
@@ -667,6 +669,7 @@ static const struct bpf_func_proto bpf_perf_prog_read_value_proto_tp = {
 };
 
 static const struct bpf_func_proto *tp_prog_func_proto(enum bpf_func_id func_id)
+>>>>>>> 96c8c479eba0 (BACKPORT: bpf: add helper bpf_perf_prog_read_value)
 {
 	switch (func_id) {
 	case BPF_FUNC_perf_event_output:
