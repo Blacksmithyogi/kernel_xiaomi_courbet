@@ -157,6 +157,7 @@ struct bpf_call_arg_meta {
  * bpf_check() is called under lock, so no race to access these global vars
  */
 static struct bpf_verifier_log verifier_log;
+static struct bpf_verifer_log verifier_log;
 
 static DEFINE_MUTEX(bpf_verifier_lock);
 
@@ -202,6 +203,7 @@ EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
  */
 static __printf(1, 2) void verbose(const char *fmt, ...)
 {
+	struct bpf_verifer_log *log = &verifier_log;
 	va_list args;
 
 	if (!bpf_verifier_log_needed(&verifier_log))
@@ -209,6 +211,12 @@ static __printf(1, 2) void verbose(const char *fmt, ...)
 
 	va_start(args, fmt);
 	bpf_verifier_vlog(&verifier_log, fmt, args);
+	if (!log->level || bpf_verifier_log_full(log))
+		return;
+
+	va_start(args, fmt);
+	log->len_used += vscnprintf(log->kbuf + log->len_used,
+				    log->len_total - log->len_used, fmt, args);
 	va_end(args);
 }
 
@@ -5255,6 +5263,7 @@ static void free_states(struct bpf_verifier_env *env)
 int bpf_check(struct bpf_prog **prog, union bpf_attr *attr)
 {
 	struct bpf_verifier_log *log = &verifier_log;
+	struct bpf_verifer_log *log = &verifier_log;
 	struct bpf_verifier_env *env;
 	int ret = -EINVAL;
 
@@ -5291,6 +5300,9 @@ int bpf_check(struct bpf_prog **prog, union bpf_attr *attr)
 			goto err_unlock;
 
 		ret = -ENOMEM;
+		log->kbuf = vmalloc(log->len_total);
+		if (!log->kbuf)
+			goto err_unlock;
 	} else {
 		log->level = 0;
 	}
@@ -5343,10 +5355,15 @@ skip_full_check:
 		ret = fixup_bpf_calls(env);
 
 	if (log->level && bpf_verifier_log_full(log)) {
+		BUG_ON(log->len_used >= log->len_total);
+		/* verifier log exceeded user supplied buffer */
 		ret = -ENOSPC;
 	}
 
 	if (log->level && !log->ubuf) {
+	/* copy verifier log back to user space including trailing zero */
+	if (log->level && copy_to_user(log->ubuf, log->kbuf,
+				       log->len_used + 1) != 0) {
 		ret = -EFAULT;
 		goto err_release_maps;
 	}
@@ -5373,6 +5390,9 @@ skip_full_check:
 	}
 
 err_release_maps:
+free_log_buf:
+	if (log->level)
+		vfree(log->kbuf);
 	if (!env->prog->aux->used_maps)
 		/* if we didn't copy map pointers into bpf_prog_info, release
 		 * them now. Otherwise free_used_maps() will release them.
