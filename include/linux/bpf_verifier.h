@@ -143,7 +143,7 @@ struct bpf_verifier_log {
 	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 struct bpf_verifer_log {
 	u32 level;
-	char *kbuf;
+	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 	char __user *ubuf;
 	u32 len_used;
 	u32 len_total;

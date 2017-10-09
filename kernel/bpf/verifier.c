@@ -207,6 +207,7 @@ static __printf(2, 3) void verbose(struct bpf_verifier_env *env,
 				   const char *fmt, ...)
 {
 	struct bpf_verifer_log *log = &env->log;
+	unsigned int n;
 	va_list args;
 
 	if (!bpf_verifier_log_needed(&verifier_log))
@@ -215,12 +216,23 @@ static __printf(2, 3) void verbose(struct bpf_verifier_env *env,
 	va_start(args, fmt);
 	bpf_verifier_vlog(&verifier_log, fmt, args);
 	if (!log->level || bpf_verifier_log_full(log))
+	if (!log->level || !log->ubuf || bpf_verifier_log_full(log))
 		return;
 
 	va_start(args, fmt);
-	log->len_used += vscnprintf(log->kbuf + log->len_used,
-				    log->len_total - log->len_used, fmt, args);
+	n = vscnprintf(log->kbuf, BPF_VERIFIER_TMP_LOG_SIZE, fmt, args);
 	va_end(args);
+
+	WARN_ONCE(n >= BPF_VERIFIER_TMP_LOG_SIZE - 1,
+		  "verifier log line truncated - local buffer too short\n");
+
+	n = min(log->len_total - log->len_used - 1, n);
+	log->kbuf[n] = '\0';
+
+	if (!copy_to_user(log->ubuf + log->len_used, log->kbuf, n + 1))
+		log->len_used += n;
+	else
+		log->ubuf = NULL;
 }
 
 static bool type_is_pkt_pointer(enum bpf_reg_type type)
@@ -5141,11 +5153,6 @@ int bpf_check(struct bpf_prog **prog, union bpf_attr *attr)
 		if (log->len_total < 128 || log->len_total > UINT_MAX >> 8 ||
 		    !log->level || !log->ubuf)
 			goto err_unlock;
-
-		ret = -ENOMEM;
-		log->kbuf = vmalloc(log->len_total);
-		if (!log->kbuf)
-			goto err_unlock;
 	}
 
 	env->strict_alignment = !!(attr->prog_flags & BPF_F_STRICT_ALIGNMENT);
@@ -5195,9 +5202,7 @@ skip_full_check:
 	if (ret == 0)
 		ret = fixup_bpf_calls(env);
 
-	if (log->level && bpf_verifier_log_full(log)) {
-		BUG_ON(log->len_used >= log->len_total);
-		/* verifier log exceeded user supplied buffer */
+	if (log->level && bpf_verifier_log_full(log))
 		ret = -ENOSPC;
 	}
 
@@ -5205,6 +5210,7 @@ skip_full_check:
 	/* copy verifier log back to user space including trailing zero */
 	if (log->level && copy_to_user(log->ubuf, log->kbuf,
 				       log->len_used + 1) != 0) {
+	if (log->level && !log->ubuf) {
 		ret = -EFAULT;
 		goto err_release_maps;
 	}
