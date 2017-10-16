@@ -699,6 +699,12 @@ static int map_update_elem(union bpf_attr *attr)
 	if (copy_from_user(value, uvalue, value_size) != 0)
 		goto free_value;
 
+	/* Need to create a kthread, thus must support schedule */
+	if (map->map_type == BPF_MAP_TYPE_CPUMAP) {
+		err = map->ops->map_update_elem(map, key, value, attr->flags);
+		goto out;
+	}
+
 	/* must increment bpf_prog_active to avoid kprobe+bpf triggering from
 	 * inside bpf map update or delete otherwise deadlocks are possible
 	 */
@@ -730,7 +736,7 @@ static int map_update_elem(union bpf_attr *attr)
 	__this_cpu_dec(bpf_prog_active);
 	preempt_enable();
 	maybe_wait_bpf_programs(map);
-
+out:
 	if (!err)
 		trace_bpf_map_update_elem(map, ufd, key, value);
 free_value:
@@ -880,9 +886,18 @@ err_put:
 	return err;
 }
 
-static const struct bpf_verifier_ops * const bpf_prog_types[] = {
-#define BPF_PROG_TYPE(_id, _ops) \
-	[_id] = &_ops,
+static const struct bpf_prog_ops * const bpf_prog_types[] = {
+#define BPF_PROG_TYPE(_id, _name) \
+	[_id] = & _name ## _prog_ops,
+#define BPF_MAP_TYPE(_id, _ops)
+#include <linux/bpf_types.h>
+#undef BPF_PROG_TYPE
+#undef BPF_MAP_TYPE
+};
+
+static const struct bpf_verifier_ops * const bpf_verifier_ops[] = {
+#define BPF_PROG_TYPE(_id, _name) \
+	[_id] = & _name ## _verifier_ops,
 #define BPF_MAP_TYPE(_id, _ops)
 #include <linux/bpf_types.h>
 #undef BPF_PROG_TYPE
@@ -894,10 +909,15 @@ static int find_prog_type(enum bpf_prog_type type, struct bpf_prog *prog)
 	if (type >= ARRAY_SIZE(bpf_prog_types) || !bpf_prog_types[type])
 		return -EINVAL;
 
+<<<<<<< HEAD
 	if (!bpf_prog_is_dev_bound(prog->aux))
 		prog->aux->ops = bpf_prog_types[type];
 	else
 		prog->aux->ops = &bpf_offload_prog_ops;
+=======
+	prog->aux->ops = bpf_prog_types[type];
+	prog->aux->vops = bpf_verifier_ops[type];
+>>>>>>> e76bb18dc474 (BACKPORT: bpf: split verifier and program ops)
 	prog->type = type;
 	return 0;
 }
@@ -1575,7 +1595,6 @@ static int bpf_prog_query(const union bpf_attr *attr,
 	case BPF_CGROUP_INET_INGRESS:
 	case BPF_CGROUP_INET_EGRESS:
 	case BPF_CGROUP_INET_SOCK_CREATE:
-<<<<<<< HEAD
 	case BPF_CGROUP_INET4_BIND:
 	case BPF_CGROUP_INET6_BIND:
 	case BPF_CGROUP_INET4_POST_BIND:
@@ -1586,8 +1605,6 @@ static int bpf_prog_query(const union bpf_attr *attr,
 	case BPF_CGROUP_UDP6_SENDMSG:
 	case BPF_CGROUP_UDP4_RECVMSG:
 	case BPF_CGROUP_UDP6_RECVMSG:
-=======
->>>>>>> 043ad55723c1 (BACKPORT: bpf: introduce BPF_PROG_QUERY command)
 	case BPF_CGROUP_SOCK_OPS:
 		break;
 	default:
