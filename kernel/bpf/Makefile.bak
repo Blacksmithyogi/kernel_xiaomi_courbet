@@ -4,14 +4,15 @@ CFLAGS_core.o += $(call cc-disable-warning, override-init)
 
 obj-$(CONFIG_BPF_SYSCALL) += syscall.o verifier.o inode.o helpers.o tnum.o
 obj-$(CONFIG_BPF_SYSCALL) += hashtab.o arraymap.o percpu_freelist.o bpf_lru_list.o lpm_trie.o map_in_map.o
-<<<<<<< HEAD
 obj-$(CONFIG_BPF_SYSCALL) += btf.o
-=======
 obj-$(CONFIG_BPF_SYSCALL) += disasm.o
->>>>>>> 35ee70983550 (BACKPORT: bpf: move instruction printing into a separate file)
 ifeq ($(CONFIG_NET),y)
 obj-$(CONFIG_BPF_SYSCALL) += devmap.o
+<<<<<<< HEAD
 obj-$(CONFIG_BPF_SYSCALL) += offload.o
+=======
+obj-$(CONFIG_BPF_SYSCALL) += cpumap.o
+>>>>>>> 5959bdcd4a3c (BACKPORT: bpf: introduce new bpf cpu map type BPF_MAP_TYPE_CPUMAP)
 ifeq ($(CONFIG_STREAM_PARSER),y)
 obj-$(CONFIG_BPF_SYSCALL) += sockmap.o
 endif

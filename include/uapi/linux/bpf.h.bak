@@ -94,10 +94,7 @@ enum bpf_cmd {
 	BPF_MAP_GET_FD_BY_ID,
 	BPF_OBJ_GET_INFO_BY_FD,
 	BPF_PROG_QUERY,
-<<<<<<< HEAD
 	BPF_BTF_LOAD = 18,
-=======
->>>>>>> 043ad55723c1 (BACKPORT: bpf: introduce BPF_PROG_QUERY command)
 };
 
 enum bpf_map_type {
@@ -117,7 +114,11 @@ enum bpf_map_type {
 	BPF_MAP_TYPE_HASH_OF_MAPS,
 	BPF_MAP_TYPE_DEVMAP,
 	BPF_MAP_TYPE_SOCKMAP,
+<<<<<<< HEAD
 	BPF_MAP_TYPE_DEVMAP_HASH = 25,
+=======
+	BPF_MAP_TYPE_CPUMAP,
+>>>>>>> 5959bdcd4a3c (BACKPORT: bpf: introduce new bpf cpu map type BPF_MAP_TYPE_CPUMAP)
 };
 
 enum bpf_prog_type {
@@ -334,7 +335,6 @@ union bpf_attr {
 		__aligned_u64	prog_ids;
 		__u32		prog_cnt;
 	} query;
-<<<<<<< HEAD
 
 	struct { /* anonymous struct for BPF_BTF_LOAD */
 		__aligned_u64	btf;
@@ -343,8 +343,6 @@ union bpf_attr {
 		__u32		btf_log_size;
 		__u32		btf_log_level;
 	};
-=======
->>>>>>> 043ad55723c1 (BACKPORT: bpf: introduce BPF_PROG_QUERY command)
 } __attribute__((aligned(8)));
 
 /* BPF helper function descriptions:
@@ -685,6 +683,21 @@ union bpf_attr {
  *     @delta: An positive/negative integer to be added to xdp_md.data_meta
  *     Return: 0 on success or negative on error
  *
+ * int bpf_perf_event_read_value(map, flags, buf, buf_size)
+ *     read perf event counter value and perf event enabled/running time
+ *     @map: pointer to perf_event_array map
+ *     @flags: index of event in the map or bitmask flags
+ *     @buf: buf to fill
+ *     @buf_size: size of the buf
+ *     Return: 0 on success or negative error code
+ *
+ * int bpf_perf_prog_read_value(ctx, buf, buf_size)
+ *     read perf prog attached perf event counter and enabled/running time
+ *     @ctx: pointer to ctx
+ *     @buf: buf to fill
+ *     @buf_size: size of the buf
+ *     Return : 0 on success or negative error code
+ *
  * int skb_load_bytes_relative(const struct sk_buff *skb, u32 offset, void *to, u32 len, u32 start_header)
  * 	Description
  * 		This helper is similar to **bpf_skb_load_bytes**\ () in that
@@ -886,7 +899,9 @@ enum bpf_func_id {
 #define BPF_F_ZERO_CSUM_TX		(1ULL << 1)
 #define BPF_F_DONT_FRAGMENT		(1ULL << 2)
 
-/* BPF_FUNC_perf_event_output and BPF_FUNC_perf_event_read flags. */
+/* BPF_FUNC_perf_event_output, BPF_FUNC_perf_event_read and
+ * BPF_FUNC_perf_event_read_value flags.
+ */
 #define BPF_F_INDEX_MASK		0xffffffffULL
 #define BPF_F_CURRENT_CPU		BPF_F_INDEX_MASK
 /* BPF_FUNC_perf_event_output for sk_buff input context. */
@@ -1118,5 +1133,11 @@ enum {
 
 #define TCP_BPF_IW		1001	/* Set TCP initial congestion window */
 #define TCP_BPF_SNDCWND_CLAMP	1002	/* Set sndcwnd_clamp */
+
+struct bpf_perf_event_value {
+	__u64 counter;
+	__u64 enabled;
+	__u64 running;
+};
 
 #endif /* _UAPI__LINUX_BPF_H__ */
