@@ -276,16 +276,13 @@ union bpf_attr {
 		__u32		kern_version;	/* checked when prog_type=kprobe */
 		__u32		prog_flags;
 		char		prog_name[BPF_OBJ_NAME_LEN];
-<<<<<<< HEAD
 		__u32		prog_ifindex;	/* ifindex of netdev to prep for */
 		/* For some prog types expected attach type must be known at
 		 * load time to verify attach type specific parts of prog
 		 * (context accesses, allowed helpers, etc).
 		 */
 		__u32		expected_attach_type;
-=======
 		__u32		prog_target_ifindex;	/* ifindex of netdev to prep for */
->>>>>>> 245619b76b25 (BACKPORT: bpf: offload: add infrastructure for loading programs for a specific netdev)
 	};
 
 	struct { /* anonymous struct used by BPF_OBJ_* commands */
@@ -1042,6 +1039,10 @@ enum sk_action {
 
 #define BPF_TAG_SIZE	8
 
+enum bpf_prog_status {
+	BPF_PROG_STATUS_DEV_BOUND	= (1 << 0),
+};
+
 struct bpf_prog_info {
 	__u32 type;
 	__u32 id;
@@ -1055,6 +1056,11 @@ struct bpf_prog_info {
 	__u32 nr_map_ids;
 	__aligned_u64 map_ids;
 	char name[BPF_OBJ_NAME_LEN];
+<<<<<<< HEAD
+=======
+	__u32 ifindex;
+	__u32 status;
+>>>>>>> 10dbfdaea5ea (UPSTREAM: bpf: report offload info to user space)
 } __attribute__((aligned(8)));
 
 struct bpf_map_info {

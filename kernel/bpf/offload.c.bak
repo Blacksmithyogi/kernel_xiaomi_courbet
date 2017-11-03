@@ -148,8 +148,20 @@ int bpf_prog_offload_compile(struct bpf_prog *prog)
 <<<<<<< HEAD
 const struct bpf_verifier_ops bpf_offload_prog_ops = {
 =======
+u32 bpf_prog_offload_ifindex(struct bpf_prog *prog)
+{
+	struct bpf_dev_offload *offload = prog->aux->offload;
+	u32 ifindex;
+
+	rtnl_lock();
+	ifindex = offload->netdev ? offload->netdev->ifindex : 0;
+	rtnl_unlock();
+
+	return ifindex;
+}
+
+>>>>>>> 10dbfdaea5ea (UPSTREAM: bpf: report offload info to user space)
 const struct bpf_prog_ops bpf_offload_prog_ops = {
->>>>>>> 245619b76b25 (BACKPORT: bpf: offload: add infrastructure for loading programs for a specific netdev)
 };
 
 static int bpf_offload_notification(struct notifier_block *notifier,
