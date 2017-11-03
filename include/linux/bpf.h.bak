@@ -262,9 +262,6 @@ struct bpf_event_entry {
 	struct rcu_head rcu;
 };
 
-u64 bpf_tail_call(u64 ctx, u64 r2, u64 index, u64 r4, u64 r5);
-u64 bpf_get_stackid(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5);
-
 bool bpf_prog_array_compatible(struct bpf_array *array, const struct bpf_prog *fp);
 int bpf_prog_calc_tag(struct bpf_prog *fp);
 
@@ -354,9 +351,10 @@ extern const struct file_operations bpf_prog_fops;
 <<<<<<< HEAD
 extern const struct bpf_verifier_ops bpf_offload_prog_ops;
 =======
+extern const struct bpf_prog_ops bpf_offload_prog_ops;
+>>>>>>> 245619b76b25 (BACKPORT: bpf: offload: add infrastructure for loading programs for a specific netdev)
 extern const struct bpf_verifier_ops tc_cls_act_analyzer_ops;
 extern const struct bpf_verifier_ops xdp_analyzer_ops;
->>>>>>> d10d5d1cb6a7 (UPSTREAM: bpf: move knowledge about post-translation offsets out of verifier)
 
 struct bpf_prog *bpf_prog_get(u32 ufd);
 struct bpf_prog *bpf_prog_get_type(u32 ufd, enum bpf_prog_type type);
