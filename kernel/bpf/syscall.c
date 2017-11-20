@@ -1267,6 +1267,7 @@ EXPORT_SYMBOL_GPL(bpf_prog_get_type_dev);
 /* last field in 'union bpf_attr' used by this command */
 #define	BPF_PROG_LOAD_LAST_FIELD expected_attach_type
 #define	BPF_PROG_LOAD_LAST_FIELD prog_target_ifindex
+#define	BPF_PROG_LOAD_LAST_FIELD prog_ifindex
 
 static int bpf_prog_load(union bpf_attr *attr)
 {

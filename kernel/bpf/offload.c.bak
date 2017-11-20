@@ -14,8 +14,9 @@ int bpf_prog_offload_init(struct bpf_prog *prog, union bpf_attr *attr)
 	struct net *net = current->nsproxy->net_ns;
 	struct bpf_dev_offload *offload;
 
-	if (!capable(CAP_SYS_ADMIN))
-		return -EPERM;
+	if (attr->prog_type != BPF_PROG_TYPE_SCHED_CLS &&
+	    attr->prog_type != BPF_PROG_TYPE_XDP)
+		return -EINVAL;
 
 	if (attr->prog_flags)
 		return -EINVAL;
@@ -29,7 +30,10 @@ int bpf_prog_offload_init(struct bpf_prog *prog, union bpf_attr *attr)
 
 	rtnl_lock();
 	offload->netdev = __dev_get_by_index(net, attr->prog_ifindex);
+<<<<<<< HEAD
 	offload->netdev = __dev_get_by_index(net, attr->prog_target_ifindex);
+=======
+>>>>>>> ec42c0e6eb49 (BACKPORT: bpf: offload: rename the ifindex field)
 	if (!offload->netdev) {
 		rtnl_unlock();
 		kfree(offload);
@@ -85,6 +89,10 @@ static void __bpf_prog_offload_destroy(struct bpf_prog *prog)
 {
 	struct bpf_dev_offload *offload = prog->aux->offload;
 	struct netdev_bpf data = {};
+
+	/* Caution - if netdev is destroyed before the program, this function
+	 * will be called twice.
+	 */
 
 	data.offload.prog = prog;
 
@@ -145,9 +153,7 @@ int bpf_prog_offload_compile(struct bpf_prog *prog)
 	return bpf_prog_offload_translate(prog);
 }
 
-<<<<<<< HEAD
 const struct bpf_verifier_ops bpf_offload_prog_ops = {
-=======
 u32 bpf_prog_offload_ifindex(struct bpf_prog *prog)
 {
 	struct bpf_dev_offload *offload = prog->aux->offload;
@@ -160,7 +166,6 @@ u32 bpf_prog_offload_ifindex(struct bpf_prog *prog)
 	return ifindex;
 }
 
->>>>>>> 10dbfdaea5ea (UPSTREAM: bpf: report offload info to user space)
 const struct bpf_prog_ops bpf_offload_prog_ops = {
 };
 

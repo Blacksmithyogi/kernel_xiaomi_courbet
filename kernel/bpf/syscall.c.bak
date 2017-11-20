@@ -1184,7 +1184,6 @@ struct bpf_prog *bpf_prog_get_type(u32 ufd, enum bpf_prog_type type)
 }
 EXPORT_SYMBOL_GPL(bpf_prog_get_type);
 
-<<<<<<< HEAD
 /* Initially all BPF programs could be loaded w/o specifying
  * expected_attach_type. Later for some of them specifying expected_attach_type
  * at load time became required so that program could be validated properly.
@@ -1254,7 +1253,6 @@ static int bpf_prog_attach_check_attach_type(const struct bpf_prog *prog,
 	default:
 		return 0;
 	}
-=======
 struct bpf_prog *bpf_prog_get_type_dev(u32 ufd, enum bpf_prog_type type,
 				       struct net_device *netdev)
 {
@@ -1263,12 +1261,16 @@ struct bpf_prog *bpf_prog_get_type_dev(u32 ufd, enum bpf_prog_type type,
 	if (!IS_ERR(prog))
 		trace_bpf_prog_get_type(prog);
 	return prog;
->>>>>>> 2775ceef1138 (UPSTREAM: xdp: allow attaching programs loaded for specific device)
 }
+EXPORT_SYMBOL_GPL(bpf_prog_get_type_dev);
 
 /* last field in 'union bpf_attr' used by this command */
+<<<<<<< HEAD
 #define	BPF_PROG_LOAD_LAST_FIELD expected_attach_type
 #define	BPF_PROG_LOAD_LAST_FIELD prog_target_ifindex
+=======
+#define	BPF_PROG_LOAD_LAST_FIELD prog_ifindex
+>>>>>>> ec42c0e6eb49 (BACKPORT: bpf: offload: rename the ifindex field)
 
 static int bpf_prog_load(union bpf_attr *attr)
 {
@@ -1338,7 +1340,10 @@ static int bpf_prog_load(union bpf_attr *attr)
 	prog->gpl_compatible = is_gpl ? 1 : 0;
 
 	if (attr->prog_ifindex) {
+<<<<<<< HEAD
 	if (attr->prog_target_ifindex) {
+=======
+>>>>>>> ec42c0e6eb49 (BACKPORT: bpf: offload: rename the ifindex field)
 		err = bpf_prog_offload_init(prog, attr);
 		if (err)
 			goto free_prog;
@@ -1501,6 +1506,9 @@ static int bpf_prog_attach(const union bpf_attr *attr)
 	case BPF_CGROUP_SOCK_OPS:
 		ptype = BPF_PROG_TYPE_SOCK_OPS;
 		break;
+	case BPF_CGROUP_DEVICE:
+		ptype = BPF_PROG_TYPE_CGROUP_DEVICE;
+		break;
 	case BPF_SK_SKB_STREAM_PARSER:
 	case BPF_SK_SKB_STREAM_VERDICT:
 		return sockmap_get_from_fd(attr, true);
@@ -1570,6 +1578,9 @@ static int bpf_prog_detach(const union bpf_attr *attr)
 	case BPF_CGROUP_SOCK_OPS:
 		ptype = BPF_PROG_TYPE_SOCK_OPS;
 		break;
+	case BPF_CGROUP_DEVICE:
+		ptype = BPF_PROG_TYPE_CGROUP_DEVICE;
+		break;
 	case BPF_SK_SKB_STREAM_PARSER:
 	case BPF_SK_SKB_STREAM_VERDICT:
 		return sockmap_get_from_fd(attr, false);
@@ -1622,6 +1633,7 @@ static int bpf_prog_query(const union bpf_attr *attr,
 	case BPF_CGROUP_UDP4_RECVMSG:
 	case BPF_CGROUP_UDP6_RECVMSG:
 	case BPF_CGROUP_SOCK_OPS:
+	case BPF_CGROUP_DEVICE:
 		break;
 	default:
 		return -EINVAL;
