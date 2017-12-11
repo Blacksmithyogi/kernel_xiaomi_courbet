@@ -1707,6 +1707,7 @@ int bpf_prog_array_copy(struct bpf_prog_array __rcu *old_array,
 	return 0;
 }
 
+<<<<<<< HEAD
 int bpf_prog_array_length(struct bpf_prog_array __rcu *progs)
 {
 	struct bpf_prog **prog;
@@ -1743,6 +1744,7 @@ int bpf_prog_array_copy_to_user(struct bpf_prog_array __rcu *progs,
 	if (*prog)
 		return -ENOSPC;
 	return 0;
+=======
 int bpf_prog_array_copy_info(struct bpf_prog_array __rcu *array,
 			     __u32 __user *prog_ids, u32 request_cnt,
 			     __u32 __user *prog_cnt)
@@ -1760,6 +1762,7 @@ int bpf_prog_array_copy_info(struct bpf_prog_array __rcu *array,
 		return 0;
 
 	return bpf_prog_array_copy_to_user(array, prog_ids, request_cnt);
+>>>>>>> e58b900ad06f (UPSTREAM: bpf/tracing: allow user space to query prog array on the same tp)
 }
 
 static void bpf_prog_free_deferred(struct work_struct *work)
