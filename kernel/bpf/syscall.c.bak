@@ -1015,10 +1015,16 @@ static void __bpf_prog_put_rcu(struct rcu_head *rcu)
 static void __bpf_prog_put(struct bpf_prog *prog, bool do_idr_lock)
 {
 	if (atomic_dec_and_test(&prog->aux->refcnt)) {
+		int i;
+
 		trace_bpf_prog_put_rcu(prog);
 		/* bpf_prog_free_id() must be called first */
 		bpf_prog_free_id(prog, do_idr_lock);
+
+		for (i = 0; i < prog->aux->func_cnt; i++)
+			bpf_prog_kallsyms_del(prog->aux->func[i]);
 		bpf_prog_kallsyms_del(prog);
+
 		call_rcu(&prog->aux->rcu, __bpf_prog_put_rcu);
 	}
 }
@@ -1135,7 +1141,7 @@ struct bpf_prog *bpf_prog_inc_not_zero(struct bpf_prog *prog)
 }
 EXPORT_SYMBOL_GPL(bpf_prog_inc_not_zero);
 
-static bool bpf_prog_get_ok(struct bpf_prog *prog,
+bool bpf_prog_get_ok(struct bpf_prog *prog,
 			    enum bpf_prog_type *attach_type, bool attach_drv)
 {
 	/* not an attachment, just a refcount inc, always allow */
@@ -1175,7 +1181,6 @@ struct bpf_prog *bpf_prog_get(u32 ufd)
 	return __bpf_prog_get(ufd, NULL, false);
 }
 
-<<<<<<< HEAD
 struct bpf_prog *bpf_prog_get_type(u32 ufd, enum bpf_prog_type type)
 {
 	struct bpf_prog *prog = __bpf_prog_get(ufd, &type, false);
@@ -1255,8 +1260,6 @@ static int bpf_prog_attach_check_attach_type(const struct bpf_prog *prog,
 	default:
 		return 0;
 	}
-=======
->>>>>>> 8e5fdfab5028 (UPSTREAM: bpf: turn bpf_prog_get_type() into a wrapper)
 struct bpf_prog *bpf_prog_get_type_dev(u32 ufd, enum bpf_prog_type type,
 				       bool attach_drv)
 {
@@ -1317,7 +1320,11 @@ static int bpf_prog_load(union bpf_attr *attr)
 	if (!prog)
 		return -ENOMEM;
 
+<<<<<<< HEAD
 	prog->expected_attach_type = attr->expected_attach_type;
+=======
+	prog->aux->offload_requested = !!attr->prog_ifindex;
+>>>>>>> acd5821ace57 (UPSTREAM: bpf: offload: don't use prog->aux->offload as boolean)
 
 	err = security_bpf_prog_alloc(prog->aux);
 	if (err)
@@ -1340,8 +1347,12 @@ static int bpf_prog_load(union bpf_attr *attr)
 	atomic_set(&prog->aux->refcnt, 1);
 	prog->gpl_compatible = is_gpl ? 1 : 0;
 
+<<<<<<< HEAD
 	if (attr->prog_ifindex) {
 	if (attr->prog_target_ifindex) {
+=======
+	if (bpf_prog_is_dev_bound(prog->aux)) {
+>>>>>>> acd5821ace57 (UPSTREAM: bpf: offload: don't use prog->aux->offload as boolean)
 		err = bpf_prog_offload_init(prog, attr);
 		if (err)
 			goto free_prog;
@@ -1363,7 +1374,8 @@ static int bpf_prog_load(union bpf_attr *attr)
 		goto free_used_maps;
 
 	/* eBPF program is ready to be JITed */
-	prog = bpf_prog_select_runtime(prog, &err);
+	if (!prog->bpf_func)
+		prog = bpf_prog_select_runtime(prog, &err);
 	if (err < 0)
 		goto free_used_maps;
 
@@ -1765,6 +1777,67 @@ static int bpf_map_get_fd_by_id(const union bpf_attr *attr)
 	return fd;
 }
 
+static const struct bpf_map *bpf_map_from_imm(const struct bpf_prog *prog,
+					      unsigned long addr)
+{
+	int i;
+
+	for (i = 0; i < prog->aux->used_map_cnt; i++)
+		if (prog->aux->used_maps[i] == (void *)addr)
+			return prog->aux->used_maps[i];
+	return NULL;
+}
+
+static struct bpf_insn *bpf_insn_prepare_dump(const struct bpf_prog *prog)
+{
+	const struct bpf_map *map;
+	struct bpf_insn *insns;
+	u64 imm;
+	int i;
+
+	insns = kmemdup(prog->insnsi, bpf_prog_insn_size(prog),
+			GFP_USER);
+	if (!insns)
+		return insns;
+
+	for (i = 0; i < prog->len; i++) {
+		if (insns[i].code == (BPF_JMP | BPF_TAIL_CALL)) {
+			insns[i].code = BPF_JMP | BPF_CALL;
+			insns[i].imm = BPF_FUNC_tail_call;
+			/* fall-through */
+		}
+		if (insns[i].code == (BPF_JMP | BPF_CALL) ||
+		    insns[i].code == (BPF_JMP | BPF_CALL_ARGS)) {
+			if (insns[i].code == (BPF_JMP | BPF_CALL_ARGS))
+				insns[i].code = BPF_JMP | BPF_CALL;
+			if (!bpf_dump_raw_ok())
+				insns[i].imm = 0;
+			continue;
+		}
+
+		if (insns[i].code != (BPF_LD | BPF_IMM | BPF_DW))
+			continue;
+
+		imm = ((u64)insns[i + 1].imm << 32) | (u32)insns[i].imm;
+		map = bpf_map_from_imm(prog, imm);
+		if (map) {
+			insns[i].src_reg = BPF_PSEUDO_MAP_FD;
+			insns[i].imm = map->id;
+			insns[i + 1].imm = 0;
+			continue;
+		}
+
+		if (!bpf_dump_raw_ok() &&
+		    imm == (unsigned long)prog->aux) {
+			insns[i].imm = 0;
+			insns[i + 1].imm = 0;
+			continue;
+		}
+	}
+
+	return insns;
+}
+
 static int bpf_prog_get_info_by_fd(struct bpf_prog *prog,
 				   const union bpf_attr *attr,
 				   union bpf_attr __user *uattr)
@@ -1816,24 +1889,35 @@ static int bpf_prog_get_info_by_fd(struct bpf_prog *prog,
 	ulen = info.jited_prog_len;
 	info.jited_prog_len = prog->jited_len;
 	if (info.jited_prog_len && ulen) {
-		uinsns = u64_to_user_ptr(info.jited_prog_insns);
-		ulen = min_t(u32, info.jited_prog_len, ulen);
-		if (copy_to_user(uinsns, prog->bpf_func, ulen))
-			return -EFAULT;
+		if (bpf_dump_raw_ok()) {
+			uinsns = u64_to_user_ptr(info.jited_prog_insns);
+			ulen = min_t(u32, info.jited_prog_len, ulen);
+			if (copy_to_user(uinsns, prog->bpf_func, ulen))
+				return -EFAULT;
+		} else {
+			info.jited_prog_insns = 0;
+		}
 	}
 
 	ulen = info.xlated_prog_len;
 	info.xlated_prog_len = bpf_prog_insn_size(prog);
 	if (info.xlated_prog_len && ulen) {
+		struct bpf_insn *insns_sanitized;
+		bool fault;
+
+		if (prog->blinded && !bpf_dump_raw_ok()) {
+			info.xlated_prog_insns = 0;
+			goto done;
+		}
+		insns_sanitized = bpf_insn_prepare_dump(prog);
+		if (!insns_sanitized)
+			return -ENOMEM;
 		uinsns = u64_to_user_ptr(info.xlated_prog_insns);
 		ulen = min_t(u32, info.xlated_prog_len, ulen);
-		if (copy_to_user(uinsns, prog->insnsi, ulen))
+		fault = copy_to_user(uinsns, insns_sanitized, ulen);
+		kfree(insns_sanitized);
+		if (fault)
 			return -EFAULT;
-	}
-
-	if (bpf_prog_is_dev_bound(prog->aux)) {
-		info.status |= BPF_PROG_STATUS_DEV_BOUND;
-		info.ifindex = bpf_prog_offload_ifindex(prog);
 	}
 
 done:

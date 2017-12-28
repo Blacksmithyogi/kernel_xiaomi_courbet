@@ -1321,6 +1321,7 @@ static int bpf_prog_load(union bpf_attr *attr)
 		return -ENOMEM;
 
 	prog->expected_attach_type = attr->expected_attach_type;
+	prog->aux->offload_requested = !!attr->prog_ifindex;
 
 	err = security_bpf_prog_alloc(prog->aux);
 	if (err)
@@ -1345,6 +1346,7 @@ static int bpf_prog_load(union bpf_attr *attr)
 
 	if (attr->prog_ifindex) {
 	if (attr->prog_target_ifindex) {
+	if (bpf_prog_is_dev_bound(prog->aux)) {
 		err = bpf_prog_offload_init(prog, attr);
 		if (err)
 			goto free_prog;
