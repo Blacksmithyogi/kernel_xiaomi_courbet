@@ -210,7 +210,13 @@ enum bpf_attach_type {
  */
 #define BPF_F_STRICT_ALIGNMENT	(1U << 0)
 
+/* when bpf_ldimm64->src_reg == BPF_PSEUDO_MAP_FD, bpf_ldimm64->imm == fd */
 #define BPF_PSEUDO_MAP_FD	1
+
+/* when bpf_call->src_reg == BPF_PSEUDO_CALL, bpf_call->imm == pc-relative
+ * offset to another bpf function
+ */
+#define BPF_PSEUDO_CALL		1
 
 /* flags for BPF_MAP_UPDATE_ELEM command */
 #define BPF_ANY		0 /* create new element or update existing */
@@ -255,6 +261,10 @@ union bpf_attr {
 					 * BPF_F_NUMA_NODE is set).
 					 */
 		char	map_name[BPF_OBJ_NAME_LEN];
+<<<<<<< HEAD
+=======
+		__u32	map_ifindex;	/* ifindex of netdev to create on */
+>>>>>>> cf4609e33f68 (BACKPORT: bpf: offload: add map offload infrastructure)
 	};
 
 	struct { /* anonymous struct used by BPF_MAP_*_ELEM commands */
@@ -279,15 +289,12 @@ union bpf_attr {
 		__u32		prog_flags;
 		char		prog_name[BPF_OBJ_NAME_LEN];
 		__u32		prog_ifindex;	/* ifindex of netdev to prep for */
-<<<<<<< HEAD
 		/* For some prog types expected attach type must be known at
 		 * load time to verify attach type specific parts of prog
 		 * (context accesses, allowed helpers, etc).
 		 */
 		__u32		expected_attach_type;
 		__u32		prog_target_ifindex;	/* ifindex of netdev to prep for */
-=======
->>>>>>> ec42c0e6eb49 (BACKPORT: bpf: offload: rename the ifindex field)
 	};
 
 	struct { /* anonymous struct used by BPF_OBJ_* commands */
@@ -711,6 +718,10 @@ union bpf_attr {
  *     @buf_size: size of the buf
  *     Return : 0 on success or negative error code
  *
+ * int bpf_override_return(pt_regs, rc)
+ *	@pt_regs: pointer to struct pt_regs
+ *	@rc: the return value to set
+ *
  * int skb_load_bytes_relative(const struct sk_buff *skb, u32 offset, void *to, u32 len, u32 start_header)
  * 	Description
  * 		This helper is similar to **bpf_skb_load_bytes**\ () in that
@@ -1035,6 +1046,9 @@ struct xdp_md {
 	__u32 data;
 	__u32 data_end;
 	__u32 data_meta;
+	/* Below access go through struct xdp_rxq_info */
+	__u32 ingress_ifindex; /* rxq->dev->ifindex */
+	__u32 rx_queue_index;  /* rxq->queue_index  */
 };
 
 enum sk_action {
@@ -1043,10 +1057,6 @@ enum sk_action {
 };
 
 #define BPF_TAG_SIZE	8
-
-enum bpf_prog_status {
-	BPF_PROG_STATUS_DEV_BOUND	= (1 << 0),
-};
 
 struct bpf_prog_info {
 	__u32 type;
@@ -1062,7 +1072,8 @@ struct bpf_prog_info {
 	__aligned_u64 map_ids;
 	char name[BPF_OBJ_NAME_LEN];
 	__u32 ifindex;
-	__u32 status;
+	__u64 netns_dev;
+	__u64 netns_ino;
 } __attribute__((aligned(8)));
 
 struct bpf_map_info {
@@ -1120,6 +1131,12 @@ struct bpf_sock_ops {
 	__u32 local_ip6[4];	/* Stored in network byte order */
 	__u32 remote_port;	/* Stored in network byte order */
 	__u32 local_port;	/* stored in host byte order */
+	__u32 is_fullsock;	/* Some TCP fields are only valid if
+				 * there is a full socket. If not, the
+				 * fields read as zero.
+				 */
+	__u32 snd_cwnd;
+	__u32 srtt_us;		/* Averaged RTT << 3 in usecs */
 };
 
 /* List of known BPF sock_ops operators.
@@ -1174,7 +1191,8 @@ struct bpf_perf_event_value {
 #define BPF_DEVCG_DEV_CHAR	(1ULL << 1)
 
 struct bpf_cgroup_dev_ctx {
-	__u32 access_type; /* (access << 16) | type */
+	/* access_type encoded as (BPF_DEVCG_ACC_* << 16) | BPF_DEVCG_DEV_* */
+	__u32 access_type;
 	__u32 major;
 	__u32 minor;
 };
