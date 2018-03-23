@@ -174,6 +174,7 @@ static struct bpf_verifer_log verifier_log;
 
 static DEFINE_MUTEX(bpf_verifier_lock);
 
+<<<<<<< HEAD
 void bpf_verifier_vlog(struct bpf_verifier_log *log,
 		       const char *fmt, va_list args)
 {
@@ -196,7 +197,6 @@ void bpf_verifier_vlog(struct bpf_verifier_log *log,
 /* log_level controls verbosity level of eBPF verifier.
  * bpf_verifier_log_write() is used to dump the verification trace to the log,
  * so the user can figure out what's wrong with the program
-<<<<<<< HEAD
  */
 __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_log *log,
 						  const char *fmt, ...)
@@ -214,15 +214,16 @@ EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
 /* Historically bpf_verifier_log_write was called verbose, but the name was too
  * generic for symbol export. The function was renamed, but not the calls in
  * the verifier to avoid complicating backports. Hence the alias below.
-=======
->>>>>>> 132bf42df16e (UPSTREAM: bpf: export function to write into verifier log buffer)
  */
 __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 					   const char *fmt, ...)
+=======
+static void log_write(struct bpf_verifier_env *env, const char *fmt,
+		      va_list args)
+>>>>>>> 3b005bfbd21f (BACKPORT: bpf: Remove struct bpf_verifier_env argument from print_bpf_insn)
 {
 	struct bpf_verifer_log *log = &env->log;
 	unsigned int n;
-	va_list args;
 
 	if (!bpf_verifier_log_needed(&verifier_log))
 		return;
@@ -233,9 +234,7 @@ __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 	if (!log->level || !log->ubuf || bpf_verifier_log_full(log))
 		return;
 
-	va_start(args, fmt);
 	n = vscnprintf(log->kbuf, BPF_VERIFIER_TMP_LOG_SIZE, fmt, args);
-	va_end(args);
 
 	WARN_ONCE(n >= BPF_VERIFIER_TMP_LOG_SIZE - 1,
 		  "verifier log line truncated - local buffer too short\n");
@@ -248,14 +247,30 @@ __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 	else
 		log->ubuf = NULL;
 }
-EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
-/* Historically bpf_verifier_log_write was called verbose, but the name was too
- * generic for symbol export. The function was renamed, but not the calls in
- * the verifier to avoid complicating backports. Hence the alias below.
+
+/* log_level controls verbosity level of eBPF verifier.
+ * bpf_verifier_log_write() is used to dump the verification trace to the log,
+ * so the user can figure out what's wrong with the program
  */
-static __printf(2, 3) void verbose(struct bpf_verifier_env *env,
-				   const char *fmt, ...)
-	__attribute__((alias("bpf_verifier_log_write")));
+__printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
+					   const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	log_write(env, fmt, args);
+	va_end(args);
+}
+EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
+
+__printf(2, 3) static void verbose(void *private_data, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	log_write(private_data, fmt, args);
+	va_end(args);
+}
 
 static bool type_is_pkt_pointer(enum bpf_reg_type type)
 {
@@ -561,10 +576,6 @@ err:
 #define CALLER_SAVED_REGS 6
 static const int caller_saved[CALLER_SAVED_REGS] = {
 	BPF_REG_0, BPF_REG_1, BPF_REG_2, BPF_REG_3, BPF_REG_4, BPF_REG_5
-};
-#define CALLEE_SAVED_REGS 5
-static const int callee_saved[CALLEE_SAVED_REGS] = {
-	BPF_REG_6, BPF_REG_7, BPF_REG_8, BPF_REG_9
 };
 
 static void __mark_reg_not_init(struct bpf_reg_state *reg);
@@ -1360,6 +1371,7 @@ static bool may_access_direct_pkt_data(struct bpf_verifier_env *env,
 	case BPF_PROG_TYPE_XDP:
 	case BPF_PROG_TYPE_LWT_XMIT:
 	case BPF_PROG_TYPE_SK_SKB:
+	case BPF_PROG_TYPE_SK_MSG:
 		if (meta)
 			return meta->pkt_access;
 
@@ -2195,7 +2207,8 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 	case BPF_MAP_TYPE_SOCKMAP:
 		if (func_id != BPF_FUNC_sk_redirect_map &&
 		    func_id != BPF_FUNC_sock_map_update &&
-		    func_id != BPF_FUNC_map_delete_elem)
+		    func_id != BPF_FUNC_map_delete_elem &&
+		    func_id != BPF_FUNC_msg_redirect_map)
 			goto error;
 		break;
 	default:
@@ -2234,6 +2247,7 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 			goto error;
 		break;
 	case BPF_FUNC_sk_redirect_map:
+	case BPF_FUNC_msg_redirect_map:
 		if (map->map_type != BPF_MAP_TYPE_SOCKMAP)
 			goto error;
 		break;
@@ -5010,10 +5024,11 @@ static int do_check(struct bpf_verifier_env *env)
 		if (env->log.level) {
 			const struct bpf_insn_cbs cbs = {
 				.cb_print	= verbose,
+				.private_data	= env,
 			};
 
 			verbose(env, "%d: ", env->insn_idx);
-			print_bpf_insn(&cbs, env, insn, env->allow_ptr_leaks);
+			print_bpf_insn(&cbs, insn, env->allow_ptr_leaks);
 		}
 
 		if (bpf_prog_is_dev_bound(env->prog->aux)) {
@@ -5254,7 +5269,8 @@ process_bpf_exit:
 		env->insn_idx++;
 	}
 
-	verbose(env, "processed %d insns, stack depth ", insn_processed);
+	verbose(env, "processed %d insns (limit %d), stack depth ",
+		insn_processed, BPF_COMPLEXITY_LIMIT_INSNS);
 	for (i = 0; i < env->subprog_cnt + 1; i++) {
 		u32 depth = env->subprog_stack_depth[i];
 
@@ -5296,6 +5312,13 @@ static int check_map_prog_compatibility(struct bpf_verifier_env *env,
 			return -EINVAL;
 		}
 	}
+
+	if ((bpf_prog_is_dev_bound(prog->aux) || bpf_map_is_dev_bound(map)) &&
+	    !bpf_offload_dev_match(prog, map)) {
+		verbose(env, "offload device mismatch between prog and map\n");
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -5393,6 +5416,13 @@ static int replace_map_fd_with_map_ptr(struct bpf_verifier_env *env)
 next_insn:
 			insn++;
 			i++;
+			continue;
+		}
+
+		/* Basic sanity check before we invest more work here. */
+		if (!bpf_opcode_in_insntable(insn->code)) {
+			verbose(env, "unknown opcode %02x\n", insn->code);
+			return -EINVAL;
 		}
 	}
 
@@ -5476,14 +5506,21 @@ static struct bpf_prog *bpf_patch_insn_data(struct bpf_verifier_env *env, u32 of
 	return new_prog;
 }
 
-/* The verifier does more data flow analysis than llvm and will not explore
- * branches that are dead at run time. Malicious programs can have dead code
- * too. Therefore replace all dead at-run-time code with nops.
+/* The verifier does more data flow analysis than llvm and will not
+ * explore branches that are dead at run time. Malicious programs can
+ * have dead code too. Therefore replace all dead at-run-time code
+ * with 'ja -1'.
+ *
+ * Just nops are not optimal, e.g. if they would sit at the end of the
+ * program and through another bug we would manage to jump there, then
+ * we'd execute beyond program memory otherwise. Returning exception
+ * code also wouldn't work since we can have subprogs where the dead
+ * code could be located.
  */
 static void sanitize_dead_code(struct bpf_verifier_env *env)
 {
 	struct bpf_insn_aux_data *aux_data = env->insn_aux_data;
-	struct bpf_insn nop = BPF_MOV64_REG(BPF_REG_0, BPF_REG_0);
+	struct bpf_insn trap = BPF_JMP_IMM(BPF_JA, 0, 0, -1);
 	struct bpf_insn *insn = env->prog->insnsi;
 	const int insn_cnt = env->prog->len;
 	int i;
@@ -5491,7 +5528,7 @@ static void sanitize_dead_code(struct bpf_verifier_env *env)
 	for (i = 0; i < insn_cnt; i++) {
 		if (aux_data[i].seen)
 			continue;
-		memcpy(insn + i, &nop, sizeof(nop));
+		memcpy(insn + i, &trap, sizeof(trap));
 	}
 }
 
@@ -5953,7 +5990,7 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
 			 */
 			map_ptr = env->insn_aux_data[i + delta].map_ptr;
 			if (map_ptr == BPF_MAP_PTR_POISON) {
-				verbose(env, "tail_call obusing map_ptr\n");
+				verbose(env, "tail_call abusing map_ptr\n");
 				return -EINVAL;
 			}
 			if (!map_ptr->unpriv_array)
