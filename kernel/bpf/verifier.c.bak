@@ -217,14 +217,16 @@ EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
  */
 __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 					   const char *fmt, ...)
-=======
 static void log_write(struct bpf_verifier_env *env, const char *fmt,
 		      va_list args)
->>>>>>> 3b005bfbd21f (BACKPORT: bpf: Remove struct bpf_verifier_env argument from print_bpf_insn)
+=======
+void bpf_verifier_vlog(struct bpf_verifier_log *log, const char *fmt,
+		       va_list args)
+>>>>>>> b66a38aca265 (UPSTREAM: bpf: Add bpf_verifier_vlog() and bpf_verifier_log_needed())
 {
-	struct bpf_verifer_log *log = &env->log;
 	unsigned int n;
 
+<<<<<<< HEAD
 	if (!bpf_verifier_log_needed(&verifier_log))
 		return;
 
@@ -234,6 +236,8 @@ static void log_write(struct bpf_verifier_env *env, const char *fmt,
 	if (!log->level || !log->ubuf || bpf_verifier_log_full(log))
 		return;
 
+=======
+>>>>>>> b66a38aca265 (UPSTREAM: bpf: Add bpf_verifier_vlog() and bpf_verifier_log_needed())
 	n = vscnprintf(log->kbuf, BPF_VERIFIER_TMP_LOG_SIZE, fmt, args);
 
 	WARN_ONCE(n >= BPF_VERIFIER_TMP_LOG_SIZE - 1,
@@ -257,18 +261,25 @@ __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 {
 	va_list args;
 
+	if (!bpf_verifier_log_needed(&env->log))
+		return;
+
 	va_start(args, fmt);
-	log_write(env, fmt, args);
+	bpf_verifier_vlog(&env->log, fmt, args);
 	va_end(args);
 }
 EXPORT_SYMBOL_GPL(bpf_verifier_log_write);
 
 __printf(2, 3) static void verbose(void *private_data, const char *fmt, ...)
 {
+	struct bpf_verifier_env *env = private_data;
 	va_list args;
 
+	if (!bpf_verifier_log_needed(&env->log))
+		return;
+
 	va_start(args, fmt);
-	log_write(private_data, fmt, args);
+	bpf_verifier_vlog(&env->log, fmt, args);
 	va_end(args);
 }
 
@@ -6111,7 +6122,7 @@ int bpf_check(struct bpf_prog **prog, union bpf_attr *attr)
 	struct bpf_verifier_log *log = &verifier_log;
 	struct bpf_verifer_log *log = &verifier_log;
 	struct bpf_verifier_env *env;
-	struct bpf_verifer_log *log;
+	struct bpf_verifier_log *log;
 	int ret = -EINVAL;
 
 	/* no program is valid */

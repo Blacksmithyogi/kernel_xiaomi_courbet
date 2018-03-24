@@ -170,12 +170,9 @@ struct bpf_insn_aux_data {
 #define BPF_VERIFIER_TMP_LOG_SIZE	1024
 
 struct bpf_verifier_log {
-<<<<<<< HEAD
 	u32 level;
 	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 struct bpf_verifer_log {
-=======
->>>>>>> d1f77c04045d (UPSTREAM: bpf: Rename bpf_verifer_log)
 	u32 level;
 	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 	char __user *ubuf;
@@ -184,10 +181,7 @@ struct bpf_verifer_log {
 };
 
 static inline bool bpf_verifier_log_full(const struct bpf_verifier_log *log)
-<<<<<<< HEAD
 static inline bool bpf_verifier_log_full(const struct bpf_verifer_log *log)
-=======
->>>>>>> d1f77c04045d (UPSTREAM: bpf: Rename bpf_verifer_log)
 {
 	return log->len_used >= log->len_total - 1;
 }
@@ -197,6 +191,7 @@ static inline bool bpf_verifier_log_needed(const struct bpf_verifier_log *log)
 	return log->level && log->ubuf && !bpf_verifier_log_full(log);
 }
 
+<<<<<<< HEAD
 __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_log *log,
 					   const char *fmt, ...);
 
@@ -209,6 +204,8 @@ struct bpf_ext_analyzer_ops {
 			 int insn_idx, int prev_insn_idx);
 };
 
+=======
+>>>>>>> b66a38aca265 (UPSTREAM: bpf: Add bpf_verifier_vlog() and bpf_verifier_log_needed())
 #define BPF_MAX_SUBPROGS 256
 
 /* single container for all structs
@@ -237,6 +234,8 @@ struct bpf_verifier_env {
 	u32 subprog_cnt;
 };
 
+void bpf_verifier_vlog(struct bpf_verifier_log *log, const char *fmt,
+		       va_list args);
 __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 					   const char *fmt, ...);
 
