@@ -170,9 +170,12 @@ struct bpf_insn_aux_data {
 #define BPF_VERIFIER_TMP_LOG_SIZE	1024
 
 struct bpf_verifier_log {
+<<<<<<< HEAD
 	u32 level;
 	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 struct bpf_verifer_log {
+=======
+>>>>>>> d1f77c04045d (UPSTREAM: bpf: Rename bpf_verifer_log)
 	u32 level;
 	char kbuf[BPF_VERIFIER_TMP_LOG_SIZE];
 	char __user *ubuf;
@@ -181,12 +184,14 @@ struct bpf_verifer_log {
 };
 
 static inline bool bpf_verifier_log_full(const struct bpf_verifier_log *log)
+<<<<<<< HEAD
 static inline bool bpf_verifier_log_full(const struct bpf_verifer_log *log)
+=======
+>>>>>>> d1f77c04045d (UPSTREAM: bpf: Rename bpf_verifer_log)
 {
 	return log->len_used >= log->len_total - 1;
 }
 
-<<<<<<< HEAD
 static inline bool bpf_verifier_log_needed(const struct bpf_verifier_log *log)
 {
 	return log->level && log->ubuf && !bpf_verifier_log_full(log);
@@ -204,8 +209,6 @@ struct bpf_ext_analyzer_ops {
 			 int insn_idx, int prev_insn_idx);
 };
 
-=======
->>>>>>> 447f46172c14 (BACKPORT: bpf: offload: allow netdev to disappear while verifier is running)
 #define BPF_MAX_SUBPROGS 256
 
 /* single container for all structs
@@ -227,12 +230,15 @@ struct bpf_verifier_env {
 	bool allow_ptr_leaks;
 	bool seen_direct_write;
 	struct bpf_insn_aux_data *insn_aux_data; /* array of per-insn state */
-	struct bpf_verifer_log log;
+	struct bpf_verifier_log log;
 	u32 subprog_starts[BPF_MAX_SUBPROGS];
 	/* computes the stack depth of each bpf function */
 	u16 subprog_stack_depth[BPF_MAX_SUBPROGS + 1];
 	u32 subprog_cnt;
 };
+
+__printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
+					   const char *fmt, ...);
 
 static inline struct bpf_reg_state *cur_regs(struct bpf_verifier_env *env)
 {

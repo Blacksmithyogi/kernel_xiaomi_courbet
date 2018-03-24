@@ -219,7 +219,7 @@ __printf(2, 3) void bpf_verifier_log_write(struct bpf_verifier_env *env,
 static void log_write(struct bpf_verifier_env *env, const char *fmt,
 		      va_list args)
 {
-	struct bpf_verifer_log *log = &env->log;
+	struct bpf_verifier_log *log = &env->log;
 	unsigned int n;
 
 	if (!bpf_verifier_log_needed(&verifier_log))
@@ -6108,7 +6108,7 @@ int bpf_check(struct bpf_prog **prog, union bpf_attr *attr)
 	struct bpf_verifier_log *log = &verifier_log;
 	struct bpf_verifer_log *log = &verifier_log;
 	struct bpf_verifier_env *env;
-	struct bpf_verifer_log *log;
+	struct bpf_verifier_log *log;
 	int ret = -EINVAL;
 
 	/* no program is valid */
