@@ -568,6 +568,7 @@ int inet_dgram_connect(struct socket *sock, struct sockaddr *uaddr,
 {
 	struct sock *sk = sock->sk;
 	const struct proto *prot;
+        const struct proto *prot;
 	int err;
 
 	if (addr_len < sizeof(uaddr->sa_family))
