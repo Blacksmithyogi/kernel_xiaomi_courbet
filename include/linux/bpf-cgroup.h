@@ -68,6 +68,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 				      struct sockaddr *uaddr,
 				      enum bpf_attach_type type,
 				      void *t_ctx);
+				      enum bpf_attach_type type);
 
 int __cgroup_bpf_run_filter_sock_ops(struct sock *sk,
 				     struct bpf_sock_ops_kern *sock_ops,
@@ -138,6 +139,7 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 							  t_ctx);	       \
 		release_sock(sk);					       \
 	}								       \
+		__ret = __cgroup_bpf_run_filter_sock_addr(sk, uaddr, type);    \
 	__ret;								       \
 })
 

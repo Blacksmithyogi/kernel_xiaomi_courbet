@@ -66,8 +66,12 @@ int __cgroup_bpf_run_filter_sk(struct sock *sk,
 
 int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 				      struct sockaddr *uaddr,
+<<<<<<< HEAD
 				      enum bpf_attach_type type,
 				      void *t_ctx);
+=======
+				      enum bpf_attach_type type);
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 
 int __cgroup_bpf_run_filter_sock_ops(struct sock *sk,
 				     struct bpf_sock_ops_kern *sock_ops,
@@ -102,18 +106,16 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 #define BPF_CGROUP_RUN_SK_PROG(sk, type)				       \
 ({									       \
 	int __ret = 0;							       \
-<<<<<<< HEAD
 	if (cgroup_bpf_enabled && sk) {					       \
 		__ret = __cgroup_bpf_run_filter_sk(sk, type);		       \
-=======
 	if (cgroup_bpf_enabled) {					       \
 		__ret = __cgroup_bpf_run_filter_sk(sk,			       \
 						 BPF_CGROUP_INET_SOCK_CREATE); \
->>>>>>> 79460caf594a (UPSTREAM: bpf: NULL pointer check is not needed in BPF_CGROUP_RUN_PROG_INET_SOCK)
 	}								       \
 	__ret;								       \
 })
 
+<<<<<<< HEAD
 #define BPF_CGROUP_RUN_PROG_INET_SOCK(sk)				       \
 	BPF_CGROUP_RUN_SK_PROG(sk, BPF_CGROUP_INET_SOCK_CREATE)
 
@@ -123,10 +125,13 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 #define BPF_CGROUP_RUN_PROG_INET6_POST_BIND(sk)				       \
 	BPF_CGROUP_RUN_SK_PROG(sk, BPF_CGROUP_INET6_POST_BIND)
 
+=======
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 #define BPF_CGROUP_RUN_SA_PROG(sk, uaddr, type)				       \
 ({									       \
 	int __ret = 0;							       \
 	if (cgroup_bpf_enabled)						       \
+<<<<<<< HEAD
 		__ret = __cgroup_bpf_run_filter_sock_addr(sk, uaddr, type,     \
 							  NULL);	       \
 	__ret;								       \
@@ -141,6 +146,9 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 							  t_ctx);	       \
 		release_sock(sk);					       \
 	}								       \
+=======
+		__ret = __cgroup_bpf_run_filter_sock_addr(sk, uaddr, type);    \
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 	__ret;								       \
 })
 
@@ -150,6 +158,7 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 #define BPF_CGROUP_RUN_PROG_INET6_BIND(sk, uaddr)			       \
 	BPF_CGROUP_RUN_SA_PROG(sk, uaddr, BPF_CGROUP_INET6_BIND)
 
+<<<<<<< HEAD
 #define BPF_CGROUP_PRE_CONNECT_ENABLED(sk) (cgroup_bpf_enabled && \
 					    sk->sk_prot->pre_connect)
 
@@ -177,6 +186,8 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 #define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr)			\
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_UDP6_RECVMSG, NULL)
 
+=======
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 #define BPF_CGROUP_RUN_PROG_SOCK_OPS(sock_ops)				       \
 ({									       \
 	int __ret = 0;							       \
@@ -212,6 +223,7 @@ static inline int cgroup_bpf_inherit(struct cgroup *cgrp) { return 0; }
 #define BPF_CGROUP_RUN_PROG_INET_SOCK(sk) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_INET4_BIND(sk, uaddr) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_INET6_BIND(sk, uaddr) ({ 0; })
+<<<<<<< HEAD
 #define BPF_CGROUP_RUN_PROG_INET4_POST_BIND(sk) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_INET6_POST_BIND(sk) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_INET4_CONNECT(sk, uaddr) ({ 0; })
@@ -222,6 +234,8 @@ static inline int cgroup_bpf_inherit(struct cgroup *cgrp) { return 0; }
 #define BPF_CGROUP_RUN_PROG_UDP6_SENDMSG_LOCK(sk, uaddr, t_ctx) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_UDP4_RECVMSG_LOCK(sk, uaddr) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr) ({ 0; })
+=======
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 #define BPF_CGROUP_RUN_PROG_SOCK_OPS(sock_ops) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_DEVICE_CGROUP(type,major,minor,access) ({ 0; })
 

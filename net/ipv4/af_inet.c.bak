@@ -462,6 +462,8 @@ int __inet_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 	u32 tb_id = RT_TABLE_LOCAL;
 	int err;
 
+<<<<<<< HEAD
+=======
 	/* If the socket has its own bind function then use it. (RAW) */
 	if (sk->sk_prot->bind) {
 		err = sk->sk_prot->bind(sk, uaddr, addr_len);
@@ -478,6 +480,7 @@ int __inet_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 	if (err)
 		goto out;
 
+>>>>>>> d571634881a0 (UPSTREAM: bpf: Hooks for sys_bind)
 	if (addr->sin_family != AF_INET) {
 		/* Compatibility games : accept AF_UNSPEC (mapped to AF_INET)
 		 * only if s_addr is INADDR_ANY.

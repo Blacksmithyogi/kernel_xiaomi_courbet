@@ -5704,6 +5704,15 @@ const struct bpf_verifier_ops sock_ops_prog_ops = {
 const struct bpf_prog_ops cg_sock_prog_ops = {
 };
 
+const struct bpf_verifier_ops cg_sock_addr_verifier_ops = {
+	.get_func_proto		= sock_addr_func_proto,
+	.is_valid_access	= sock_addr_is_valid_access,
+	.convert_ctx_access	= sock_addr_convert_ctx_access,
+};
+
+const struct bpf_prog_ops cg_sock_addr_prog_ops = {
+};
+
 const struct bpf_verifier_ops sock_ops_verifier_ops = {
 	.get_func_proto		= sock_ops_func_proto,
 	.is_valid_access	= sock_ops_is_valid_access,
