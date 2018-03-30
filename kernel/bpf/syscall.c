@@ -1329,6 +1329,25 @@ struct bpf_prog *bpf_prog_get_type_dev(u32 ufd, enum bpf_prog_type type,
 }
 EXPORT_SYMBOL_GPL(bpf_prog_get_type_dev);
 
+static int
+bpf_prog_load_check_attach_type(enum bpf_prog_type prog_type,
+				enum bpf_attach_type expected_attach_type)
+{
+	/* There are currently no prog types that require specifying
+	 * attach_type at load time.
+	 */
+	return 0;
+}
+
+static int bpf_prog_attach_check_attach_type(const struct bpf_prog *prog,
+					     enum bpf_attach_type attach_type)
+{
+	/* There are currently no prog types that require specifying
+	 * attach_type at load time.
+	 */
+	return 0;
+}
+
 /* last field in 'union bpf_attr' used by this command */
 #define	BPF_PROG_LOAD_LAST_FIELD expected_attach_type
 #define	BPF_PROG_LOAD_LAST_FIELD prog_target_ifindex
@@ -1379,6 +1398,7 @@ static int bpf_prog_load(union bpf_attr *attr)
 		return -ENOMEM;
 
 	prog->expected_attach_type = attr->expected_attach_type;
+
 	prog->aux->offload_requested = !!attr->prog_ifindex;
 
 	err = security_bpf_prog_alloc(prog->aux);

@@ -1329,10 +1329,32 @@ struct bpf_prog *bpf_prog_get_type_dev(u32 ufd, enum bpf_prog_type type,
 }
 EXPORT_SYMBOL_GPL(bpf_prog_get_type_dev);
 
+static int
+bpf_prog_load_check_attach_type(enum bpf_prog_type prog_type,
+				enum bpf_attach_type expected_attach_type)
+{
+	/* There are currently no prog types that require specifying
+	 * attach_type at load time.
+	 */
+	return 0;
+}
+
+static int bpf_prog_attach_check_attach_type(const struct bpf_prog *prog,
+					     enum bpf_attach_type attach_type)
+{
+	/* There are currently no prog types that require specifying
+	 * attach_type at load time.
+	 */
+	return 0;
+}
+
 /* last field in 'union bpf_attr' used by this command */
 #define	BPF_PROG_LOAD_LAST_FIELD expected_attach_type
+<<<<<<< HEAD
 #define	BPF_PROG_LOAD_LAST_FIELD prog_target_ifindex
 #define	BPF_PROG_LOAD_LAST_FIELD prog_ifindex
+=======
+>>>>>>> ae9d551d4502 (BACKPORT: bpf: Check attach type at prog load time)
 
 static int bpf_prog_load(union bpf_attr *attr)
 {
@@ -1369,7 +1391,10 @@ static int bpf_prog_load(union bpf_attr *attr)
 	    !capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
+<<<<<<< HEAD
 	bpf_prog_load_fixup_attach_type(attr);
+=======
+>>>>>>> ae9d551d4502 (BACKPORT: bpf: Check attach type at prog load time)
 	if (bpf_prog_load_check_attach_type(type, attr->expected_attach_type))
 		return -EINVAL;
 
@@ -1379,6 +1404,10 @@ static int bpf_prog_load(union bpf_attr *attr)
 		return -ENOMEM;
 
 	prog->expected_attach_type = attr->expected_attach_type;
+<<<<<<< HEAD
+=======
+
+>>>>>>> ae9d551d4502 (BACKPORT: bpf: Check attach type at prog load time)
 	prog->aux->offload_requested = !!attr->prog_ifindex;
 
 	err = security_bpf_prog_alloc(prog->aux);
@@ -2230,13 +2259,10 @@ SYSCALL_DEFINE3(bpf, int, cmd, union bpf_attr __user *, uattr, unsigned int, siz
 	case BPF_OBJ_GET_INFO_BY_FD:
 		err = bpf_obj_get_info_by_fd(&attr, uattr);
 		break;
-<<<<<<< HEAD
 	case BPF_BTF_LOAD:
 		err = bpf_btf_load(&attr);
-=======
 	case BPF_RAW_TRACEPOINT_OPEN:
 		err = bpf_raw_tracepoint_open(&attr);
->>>>>>> 09404f2759dd (UPSTREAM: bpf: introduce BPF_RAW_TRACEPOINT)
 		break;
 	default:
 		err = -EINVAL;

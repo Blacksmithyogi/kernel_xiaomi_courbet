@@ -1452,7 +1452,7 @@ static int check_ctx_access(struct bpf_verifier_env *env, int insn_idx, int off,
 	} else if (env->ops->is_valid_access &&
 		   env->ops->is_valid_access(off, size, t, &info)) {
 	if (env->ops->is_valid_access &&
-	    env->ops->is_valid_access(off, size, t, &info)) {
+	    env->ops->is_valid_access(off, size, t, env->prog, &info)) {
 		/* A non zero info.ctx_field_size indicates that this field is a
 		 * candidate for later verifier transformation to load the whole
 		 * field and then apply a mask when accessed with a narrower
@@ -2445,7 +2445,7 @@ static int check_helper_call(struct bpf_verifier_env *env, int func_id, int insn
 	if (env->prog->aux->vops->get_func_proto)
 		fn = env->prog->aux->vops->get_func_proto(func_id);
 	if (env->ops->get_func_proto)
-		fn = env->ops->get_func_proto(func_id);
+		fn = env->ops->get_func_proto(func_id, env->prog);
 
 	if (!fn) {
 		verbose(env, "unknown func %s#%d\n", func_id_name(func_id),
@@ -6072,6 +6072,7 @@ patch_call_imm:
 		fn = prog->aux->ops->get_func_proto(insn->imm, env->prog);
 		fn = prog->aux->vops->get_func_proto(insn->imm);
 		fn = env->ops->get_func_proto(insn->imm);
+		fn = env->ops->get_func_proto(insn->imm, env->prog);
 		/* all functions that have prototype and verifier allowed
 		 * programs to call them, must be real in-kernel functions
 		 */
