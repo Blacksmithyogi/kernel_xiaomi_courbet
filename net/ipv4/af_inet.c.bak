@@ -432,7 +432,6 @@ EXPORT_SYMBOL(inet_release);
 int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 {
 	struct sock *sk = sock->sk;
-<<<<<<< HEAD
 	int err;
 
 	/* If the socket has its own bind function then use it. (RAW) */
@@ -461,8 +460,6 @@ int __inet_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 	unsigned short snum;
 	int chk_addr_ret;
 	u32 tb_id = RT_TABLE_LOCAL;
-=======
->>>>>>> 1d2f6ec89bbe (BACKPORT: net: Introduce __inet_bind() and __inet6_bind)
 	int err;
 
 	/* If the socket has its own bind function then use it. (RAW) */
@@ -549,7 +546,6 @@ int __inet_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 		inet->inet_saddr = 0;  /* Use device */
 
 	/* Make sure we are allowed to bind here. */
-<<<<<<< HEAD
 	if (snum || !(inet->bind_address_no_port ||
 		      force_bind_address_no_port)) {
 		if (sk->sk_prot->get_port(sk, snum)) {
@@ -562,14 +558,15 @@ int __inet_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 			inet->inet_saddr = inet->inet_rcv_saddr = 0;
 			goto out_release_sock;
 		}
-=======
+<<<<<<< HEAD
 	if ((snum || !(inet->bind_address_no_port ||
 		       force_bind_address_no_port)) &&
 	    sk->sk_prot->get_port(sk, snum)) {
 		inet->inet_saddr = inet->inet_rcv_saddr = 0;
 		err = -EADDRINUSE;
 		goto out_release_sock;
->>>>>>> 1d2f6ec89bbe (BACKPORT: net: Introduce __inet_bind() and __inet6_bind)
+=======
+>>>>>>> 81153d720206 (UPSTREAM: bpf: Post-hooks for sys_bind)
 	}
 
 	if (inet->inet_rcv_saddr)

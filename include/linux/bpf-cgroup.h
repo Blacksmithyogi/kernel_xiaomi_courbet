@@ -106,8 +106,7 @@ int __cgroup_bpf_check_dev_permission(short dev_type, u32 major, u32 minor,
 	if (cgroup_bpf_enabled && sk) {					       \
 		__ret = __cgroup_bpf_run_filter_sk(sk, type);		       \
 	if (cgroup_bpf_enabled) {					       \
-		__ret = __cgroup_bpf_run_filter_sk(sk,			       \
-						 BPF_CGROUP_INET_SOCK_CREATE); \
+		__ret = __cgroup_bpf_run_filter_sk(sk, type);		       \
 	}								       \
 	__ret;								       \
 })

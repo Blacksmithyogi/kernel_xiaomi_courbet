@@ -4238,11 +4238,70 @@ static bool lwt_is_valid_access(int off, int size,
 static bool __sock_filter_check_attach_type(int off,
 					    enum bpf_access_type access_type,
 					    enum bpf_attach_type attach_type)
+<<<<<<< HEAD
+=======
+{
+	switch (off) {
+	case offsetof(struct bpf_sock, bound_dev_if):
+	case offsetof(struct bpf_sock, mark):
+	case offsetof(struct bpf_sock, priority):
+		switch (attach_type) {
+		case BPF_CGROUP_INET_SOCK_CREATE:
+			goto full_access;
+		default:
+			return false;
+		}
+	case bpf_ctx_range(struct bpf_sock, src_ip4):
+		switch (attach_type) {
+		case BPF_CGROUP_INET4_POST_BIND:
+			goto read_only;
+		default:
+			return false;
+		}
+	case bpf_ctx_range_till(struct bpf_sock, src_ip6[0], src_ip6[3]):
+		switch (attach_type) {
+		case BPF_CGROUP_INET6_POST_BIND:
+			goto read_only;
+		default:
+			return false;
+		}
+	case bpf_ctx_range(struct bpf_sock, src_port):
+		switch (attach_type) {
+		case BPF_CGROUP_INET4_POST_BIND:
+		case BPF_CGROUP_INET6_POST_BIND:
+			goto read_only;
+		default:
+			return false;
+		}
+	}
+read_only:
+	return access_type == BPF_READ;
+full_access:
+	return true;
+}
+
+static bool __sock_filter_check_size(int off, int size,
+				     struct bpf_insn_access_aux *info)
+{
+	const int size_default = sizeof(__u32);
+
+	switch (off) {
+	case bpf_ctx_range(struct bpf_sock, src_ip4):
+	case bpf_ctx_range_till(struct bpf_sock, src_ip6[0], src_ip6[3]):
+		bpf_ctx_record_field_size(info, size_default);
+		return bpf_ctx_narrow_access_ok(off, size, size_default);
+	}
+
+	return size == size_default;
+}
+
+>>>>>>> 81153d720206 (UPSTREAM: bpf: Post-hooks for sys_bind)
 static bool sock_filter_is_valid_access(int off, int size,
 					enum bpf_access_type type,
 					const struct bpf_prog *prog,
 					struct bpf_insn_access_aux *info)
 {
+<<<<<<< HEAD
 	switch (off) {
 	case offsetof(struct bpf_sock, bound_dev_if):
 	case offsetof(struct bpf_sock, mark):
@@ -4302,6 +4361,8 @@ static bool sock_filter_is_valid_access(int off, int size,
 					const struct bpf_prog *prog,
 					struct bpf_insn_access_aux *info)
 {
+=======
+>>>>>>> 81153d720206 (UPSTREAM: bpf: Post-hooks for sys_bind)
 	if (off < 0 || off >= sizeof(struct bpf_sock))
 		return false;
 	if (off % size != 0)
@@ -4459,11 +4520,8 @@ static bool sock_addr_is_valid_access(int off, int size,
 		switch (prog->expected_attach_type) {
 		case BPF_CGROUP_INET4_BIND:
 		case BPF_CGROUP_INET4_CONNECT:
-<<<<<<< HEAD
 		case BPF_CGROUP_UDP4_SENDMSG:
 		case BPF_CGROUP_UDP4_RECVMSG:
-=======
->>>>>>> 8a14d5f944a4 (BACKPORT: bpf: Hooks for sys_connect)
 			break;
 		default:
 			return false;
@@ -4473,7 +4531,6 @@ static bool sock_addr_is_valid_access(int off, int size,
 		switch (prog->expected_attach_type) {
 		case BPF_CGROUP_INET6_BIND:
 		case BPF_CGROUP_INET6_CONNECT:
-<<<<<<< HEAD
 		case BPF_CGROUP_UDP6_SENDMSG:
 		case BPF_CGROUP_UDP6_RECVMSG:
 			break;
@@ -4493,8 +4550,6 @@ static bool sock_addr_is_valid_access(int off, int size,
 				msg_src_ip6[3]):
 		switch (prog->expected_attach_type) {
 		case BPF_CGROUP_UDP6_SENDMSG:
-=======
->>>>>>> 8a14d5f944a4 (BACKPORT: bpf: Hooks for sys_connect)
 			break;
 		default:
 			return false;

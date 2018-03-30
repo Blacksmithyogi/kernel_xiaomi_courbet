@@ -460,7 +460,6 @@ int __inet6_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 		sk->sk_ipv6only = 1;
 
 	/* Make sure we are allowed to bind here. */
-<<<<<<< HEAD
 	if (snum || !(inet->bind_address_no_port ||
 		      force_bind_address_no_port)) {
 		if (sk->sk_prot->get_port(sk, snum)) {
@@ -475,7 +474,7 @@ int __inet6_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 			inet_reset_saddr(sk);
 			goto out;
 		}
-=======
+<<<<<<< HEAD
 	if ((snum || !(inet->bind_address_no_port ||
 		       force_bind_address_no_port)) &&
 	    sk->sk_prot->get_port(sk, snum)) {
@@ -483,7 +482,8 @@ int __inet6_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len,
 		inet_reset_saddr(sk);
 		err = -EADDRINUSE;
 		goto out;
->>>>>>> 1d2f6ec89bbe (BACKPORT: net: Introduce __inet_bind() and __inet6_bind)
+=======
+>>>>>>> 81153d720206 (UPSTREAM: bpf: Post-hooks for sys_bind)
 	}
 
 	if (addr_type != IPV6_ADDR_ANY)
