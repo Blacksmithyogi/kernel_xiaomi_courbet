@@ -240,12 +240,41 @@ struct btf {
 		void *data;
 	};
 	struct btf_type **types;
+	u32 *resolved_ids;
+	u32 *resolved_sizes;
 	const char *strings;
 	void *nohdr_data;
 	u32 nr_types;
 	u32 types_size;
 	u32 data_size;
 };
+
+enum verifier_phase {
+	CHECK_META,
+	CHECK_TYPE,
+};
+
+struct resolve_vertex {
+	const struct btf_type *t;
+	u32 type_id;
+	u16 next_member;
+};
+
+enum visit_state {
+	NOT_VISITED,
+	VISITED,
+	RESOLVED,
+};
+
+enum resolve_mode {
+	RESOLVE_TBD,	/* To Be Determined */
+	RESOLVE_PTR,	/* Resolving for Pointer */
+	RESOLVE_STRUCT_OR_ARRAY,	/* Resolving for struct/union
+					 * or array
+					 */
+};
+
+#define MAX_RESOLVE_DEPTH 32
 
 struct btf_verifier_env {
 	struct btf *btf;
@@ -258,6 +287,9 @@ struct btf_verifier_env {
 	enum resolve_mode resolve_mode;
 	struct bpf_verifier_log log;
 	u32 log_type_id;
+	u32 top_stack;
+	enum verifier_phase phase;
+	enum resolve_mode resolve_mode;
 };
 
 static const char * const btf_kind_str[NR_BTF_KINDS] = {
@@ -920,7 +952,136 @@ static int btf_int_check_member(struct btf_verifier_env *env,
 
 static void btf_verifier_env_free(struct btf_verifier_env *env)
 {
+	kvfree(env->visit_states);
 	kfree(env);
+}
+
+static bool env_type_is_resolve_sink(const struct btf_verifier_env *env,
+				     const struct btf_type *next_type)
+{
+	switch (env->resolve_mode) {
+	case RESOLVE_TBD:
+		/* int, enum or void is a sink */
+		return !btf_type_needs_resolve(next_type);
+	case RESOLVE_PTR:
+		/* int, enum, void, struct or array is a sink for ptr */
+		return !btf_type_is_modifier(next_type) &&
+			!btf_type_is_ptr(next_type);
+	case RESOLVE_STRUCT_OR_ARRAY:
+		/* int, enum, void or ptr is a sink for struct and array */
+		return !btf_type_is_modifier(next_type) &&
+			!btf_type_is_array(next_type) &&
+			!btf_type_is_struct(next_type);
+	default:
+		BUG_ON(1);
+	}
+}
+
+static bool env_type_is_resolved(const struct btf_verifier_env *env,
+				 u32 type_id)
+{
+	return env->visit_states[type_id] == RESOLVED;
+}
+
+static int env_stack_push(struct btf_verifier_env *env,
+			  const struct btf_type *t, u32 type_id)
+{
+	struct resolve_vertex *v;
+
+	if (env->top_stack == MAX_RESOLVE_DEPTH)
+		return -E2BIG;
+
+	if (env->visit_states[type_id] != NOT_VISITED)
+		return -EEXIST;
+
+	env->visit_states[type_id] = VISITED;
+
+	v = &env->stack[env->top_stack++];
+	v->t = t;
+	v->type_id = type_id;
+	v->next_member = 0;
+
+	if (env->resolve_mode == RESOLVE_TBD) {
+		if (btf_type_is_ptr(t))
+			env->resolve_mode = RESOLVE_PTR;
+		else if (btf_type_is_struct(t) || btf_type_is_array(t))
+			env->resolve_mode = RESOLVE_STRUCT_OR_ARRAY;
+	}
+
+	return 0;
+}
+
+static void env_stack_set_next_member(struct btf_verifier_env *env,
+				      u16 next_member)
+{
+	env->stack[env->top_stack - 1].next_member = next_member;
+}
+
+static void env_stack_pop_resolved(struct btf_verifier_env *env,
+				   u32 resolved_type_id,
+				   u32 resolved_size)
+{
+	u32 type_id = env->stack[--(env->top_stack)].type_id;
+	struct btf *btf = env->btf;
+
+	btf->resolved_sizes[type_id] = resolved_size;
+	btf->resolved_ids[type_id] = resolved_type_id;
+	env->visit_states[type_id] = RESOLVED;
+}
+
+static const struct resolve_vertex *env_stack_peak(struct btf_verifier_env *env)
+{
+	return env->top_stack ? &env->stack[env->top_stack - 1] : NULL;
+}
+
+/* The input param "type_id" must point to a needs_resolve type */
+static const struct btf_type *btf_type_id_resolve(const struct btf *btf,
+						  u32 *type_id)
+{
+	*type_id = btf->resolved_ids[*type_id];
+	return btf_type_by_id(btf, *type_id);
+}
+
+const struct btf_type *btf_type_id_size(const struct btf *btf,
+					u32 *type_id, u32 *ret_size)
+{
+	const struct btf_type *size_type;
+	u32 size_type_id = *type_id;
+	u32 size = 0;
+
+	size_type = btf_type_by_id(btf, size_type_id);
+	if (btf_type_is_void_or_null(size_type))
+		return NULL;
+
+	if (btf_type_has_size(size_type)) {
+		size = size_type->size;
+	} else if (btf_type_is_array(size_type)) {
+		size = btf->resolved_sizes[size_type_id];
+	} else if (btf_type_is_ptr(size_type)) {
+		size = sizeof(void *);
+	} else {
+		if (WARN_ON_ONCE(!btf_type_is_modifier(size_type)))
+			return NULL;
+
+		size = btf->resolved_sizes[size_type_id];
+		size_type_id = btf->resolved_ids[size_type_id];
+		size_type = btf_type_by_id(btf, size_type_id);
+		if (btf_type_is_void(size_type))
+			return NULL;
+	}
+
+	*type_id = size_type_id;
+	if (ret_size)
+		*ret_size = size;
+
+	return size_type;
+}
+
+static int btf_df_resolve(struct btf_verifier_env *env,
+			  const struct resolve_vertex *v)
+{
+	btf_verifier_log_basic(env, v->t, "Unsupported resolve");
+	return -EINVAL;
 }
 
 static s32 btf_int_check_meta(struct btf_verifier_env *env,
@@ -1141,6 +1302,7 @@ static int btf_ptr_check_member(struct btf_verifier_env *env,
 
 static const struct btf_kind_operations int_ops = {
 	.check_meta = btf_int_check_meta,
+	.resolve = btf_df_resolve,
 	.log_details = btf_int_log,
 };
 
@@ -1364,6 +1526,7 @@ static int btf_array_check_member(struct btf_verifier_env *env,
 
 static struct btf_kind_operations fwd_ops = {
 	.check_meta = btf_ref_type_check_meta,
+	.resolve = btf_df_resolve,
 	.log_details = btf_ref_type_log,
 };
 
@@ -1447,6 +1610,11 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 
 	/* Check array->type */
 	elem_type_id = array->type;
+	const struct btf_type *elem_type;
+	u32 elem_type_id = array->type;
+	struct btf *btf = env->btf;
+	u32 elem_size;
+
 	elem_type = btf_type_by_id(btf, elem_type_id);
 	if (btf_type_is_void_or_null(elem_type)) {
 		btf_verifier_log_type(env, v->t,
@@ -1467,6 +1635,22 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	if (btf_type_is_int(elem_type) && !btf_type_int_is_regular(elem_type)) {
 		btf_verifier_log_type(env, v->t, "Invalid array of int");
 		return -EINVAL;
+	if (btf_type_is_int(elem_type)) {
+		int int_type_data = btf_type_int(elem_type);
+		u16 nr_bits = BTF_INT_BITS(int_type_data);
+		u16 nr_bytes = BITS_ROUNDUP_BYTES(nr_bits);
+
+		/* Put more restriction on array of int.  The int cannot
+		 * be a bit field and it must be either u8/u16/u32/u64.
+		 */
+		if (BITS_PER_BYTE_MASKED(nr_bits) ||
+		    BTF_INT_OFFSET(int_type_data) ||
+		    (nr_bytes != sizeof(u8) && nr_bytes != sizeof(u16) &&
+		     nr_bytes != sizeof(u32) && nr_bytes != sizeof(u64))) {
+			btf_verifier_log_type(env, v->t,
+					      "Invalid array of int");
+			return -EINVAL;
+		}
 	}
 
 	if (array->nelems && elem_size > U32_MAX / array->nelems) {
@@ -1548,6 +1732,7 @@ static int btf_struct_check_member(struct btf_verifier_env *env,
 
 static struct btf_kind_operations array_ops = {
 	.check_meta = btf_array_check_meta,
+	.resolve = btf_array_resolve,
 	.log_details = btf_array_log,
 };
 
@@ -1642,6 +1827,8 @@ static int btf_struct_resolve(struct btf_verifier_env *env,
 		const struct btf_type *last_member_type;
 		const struct btf_member *last_member;
 		u32 last_member_type_id;
+		const struct btf_member *last_member;
+		u16 last_member_type_id;
 
 		last_member = btf_type_member(v->t) + v->next_member - 1;
 		last_member_type_id = last_member->type;
@@ -1755,6 +1942,7 @@ static int btf_enum_check_member(struct btf_verifier_env *env,
 
 static struct btf_kind_operations struct_ops = {
 	.check_meta = btf_struct_check_meta,
+	.resolve = btf_struct_resolve,
 	.log_details = btf_struct_log,
 };
 
@@ -1837,6 +2025,7 @@ static struct btf_kind_operations enum_ops = {
 	.seq_show = btf_enum_seq_show,
 static struct btf_kind_operations enum_ops = {
 	.check_meta = btf_enum_check_meta,
+	.resolve = btf_df_resolve,
 	.log_details = btf_enum_log,
 };
 
@@ -2042,7 +2231,13 @@ static int btf_parse_type_sec(struct btf_verifier_env *env)
 	return btf_check_all_types(env);
 static int btf_parse_type_sec(struct btf_verifier_env *env)
 {
-	return btf_check_all_metas(env);
+	int err;
+
+	err = btf_check_all_metas(env);
+	if (err)
+		return err;
+
+	return btf_check_all_types(env);
 }
 
 static int btf_parse_str_sec(struct btf_verifier_env *env)
