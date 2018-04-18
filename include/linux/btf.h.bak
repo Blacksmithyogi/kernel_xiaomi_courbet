@@ -9,10 +9,10 @@
 struct btf;
 struct btf_type;
 union bpf_attr;
-<<<<<<< HEAD
 
 extern const struct file_operations btf_fops;
 
+<<<<<<< HEAD
 void btf_put(struct btf *btf);
 int btf_new_fd(const union bpf_attr *attr);
 struct btf *btf_get_by_fd(int fd);
@@ -20,12 +20,15 @@ int btf_get_info_by_fd(const struct btf *btf,
 		       const union bpf_attr *attr,
 		       union bpf_attr __user *uattr);
 
-=======
->>>>>>> 6355c31ccad8 (UPSTREAM: bpf: btf: Add BPF_BTF_LOAD command)
 
+=======
+>>>>>>> 5395fa3e1899 (UPSTREAM: bpf: btf: Add BPF_OBJ_GET_INFO_BY_FD support to BTF fd)
 void btf_put(struct btf *btf);
 int btf_new_fd(const union bpf_attr *attr);
 struct btf *btf_get_by_fd(int fd);
+int btf_get_info_by_fd(const struct btf *btf,
+		       const union bpf_attr *attr,
+		       union bpf_attr __user *uattr);
 /* Figure out the size of a type_id.  If type_id is a modifier
  * (e.g. const), it will be resolved to find out the type with size.
  *
