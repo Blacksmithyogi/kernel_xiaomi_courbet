@@ -247,6 +247,7 @@ struct btf {
 	u32 nr_types;
 	u32 types_size;
 	u32 data_size;
+	refcount_t refcnt;
 };
 
 enum verifier_phase {
@@ -2739,6 +2740,7 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 	return btf;
 	if (!err) {
 		btf_verifier_env_free(env);
+		btf_get(btf);
 		return btf;
 	}
 
@@ -2764,6 +2766,7 @@ static int btf_release(struct inode *inode, struct file *filp)
 }
 
 const struct file_operations btf_fops = {
+static const struct file_operations btf_fops = {
 	.release	= btf_release,
 };
 

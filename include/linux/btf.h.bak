@@ -8,8 +8,8 @@
 
 struct btf;
 struct btf_type;
-<<<<<<< HEAD
 union bpf_attr;
+<<<<<<< HEAD
 
 extern const struct file_operations btf_fops;
 
@@ -19,9 +19,13 @@ struct btf *btf_get_by_fd(int fd);
 int btf_get_info_by_fd(const struct btf *btf,
 		       const union bpf_attr *attr,
 		       union bpf_attr __user *uattr);
-=======
 
->>>>>>> a4e478d97156 (UPSTREAM: bpf: btf: Validate type reference)
+=======
+>>>>>>> 6355c31ccad8 (UPSTREAM: bpf: btf: Add BPF_BTF_LOAD command)
+
+void btf_put(struct btf *btf);
+int btf_new_fd(const union bpf_attr *attr);
+struct btf *btf_get_by_fd(int fd);
 /* Figure out the size of a type_id.  If type_id is a modifier
  * (e.g. const), it will be resolved to find out the type with size.
  *
@@ -46,10 +50,7 @@ int btf_get_info_by_fd(const struct btf *btf,
 const struct btf_type *btf_type_id_size(const struct btf *btf,
 					u32 *type_id,
 					u32 *ret_size);
-<<<<<<< HEAD
 void btf_type_seq_show(const struct btf *btf, u32 type_id, void *obj,
 		       struct seq_file *m);
-=======
->>>>>>> a4e478d97156 (UPSTREAM: bpf: btf: Validate type reference)
 
 #endif
