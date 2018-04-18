@@ -4,6 +4,7 @@
 #include <uapi/linux/btf.h>
 #include <uapi/linux/types.h>
 #include <linux/seq_file.h>
+<<<<<<< HEAD
 #include <linux/compiler.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
@@ -12,6 +13,8 @@
 #include <linux/uaccess.h>
 #include <linux/kernel.h>
 #include <linux/sort.h>
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 #include <linux/compiler.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
@@ -317,16 +320,16 @@ struct btf_kind_operations {
 			    const struct btf_type *struct_type,
 			    const struct btf_member *member,
 			    const struct btf_type *member_type);
-<<<<<<< HEAD
 	void (*log_details)(struct btf_verifier_env *env,
 			    const struct btf_type *t);
 	void (*seq_show)(const struct btf *btf, const struct btf_type *t,
 			 u32 type_id, void *data, u8 bits_offsets,
 			 struct seq_file *m);
-=======
->>>>>>> 2587451a375d (UPSTREAM: bpf: btf: Check members of struct/union)
+<<<<<<< HEAD
 	void (*log_details)(struct btf_verifier_env *env,
 			    const struct btf_type *t);
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 };
 
 static const struct btf_kind_operations * const kind_ops[NR_BTF_KINDS];
@@ -1097,6 +1100,13 @@ static int btf_df_resolve(struct btf_verifier_env *env,
 	return -EINVAL;
 }
 
+static void btf_df_seq_show(const struct btf *btf, const struct btf_type *t,
+			    u32 type_id, void *data, u8 bits_offsets,
+			    struct seq_file *m)
+{
+	seq_printf(m, "<unsupported kind:%u>", BTF_INFO_KIND(t->info));
+}
+
 static int btf_int_check_member(struct btf_verifier_env *env,
 				const struct btf_type *struct_type,
 				const struct btf_member *member,
@@ -1213,6 +1223,7 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 				  void *data, u8 bits_offset,
 				  struct seq_file *m)
 {
+<<<<<<< HEAD
 	u16 left_shift_bits, right_shift_bits;
 	u32 int_data = btf_type_int(t);
 	u8 nr_bits = BTF_INT_BITS(int_data);
@@ -1225,12 +1236,26 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	 * bits_offset is at most 7.
 	 * BTF_INT_OFFSET() cannot exceed 64 bits.
 	 */
+=======
+	u32 int_data = btf_type_int(t);
+	u16 nr_bits = BTF_INT_BITS(int_data);
+	u16 total_bits_offset;
+	u16 nr_copy_bytes;
+	u16 nr_copy_bits;
+	u8 nr_upper_bits;
+	union {
+		u64 u64_num;
+		u8  u8_nums[8];
+	} print_num;
+
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 	total_bits_offset = bits_offset + BTF_INT_OFFSET(int_data);
 	data += BITS_ROUNDDOWN_BYTES(total_bits_offset);
 	bits_offset = BITS_PER_BYTE_MASKED(total_bits_offset);
 	nr_copy_bits = nr_bits + bits_offset;
 	nr_copy_bytes = BITS_ROUNDUP_BYTES(nr_copy_bits);
 
+<<<<<<< HEAD
 	print_num = 0;
 	memcpy(&print_num, data, nr_copy_bytes);
 
@@ -1245,6 +1270,23 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	print_num >>= right_shift_bits;
 
 	seq_printf(m, "0x%llx", print_num);
+=======
+	print_num.u64_num = 0;
+	memcpy(&print_num.u64_num, data, nr_copy_bytes);
+
+	/* Ditch the higher order bits */
+	nr_upper_bits = BITS_PER_BYTE_MASKED(nr_copy_bits);
+	if (nr_upper_bits) {
+		/* We need to mask out some bits of the upper byte. */
+		u8 mask = (1 << nr_upper_bits) - 1;
+
+		print_num.u8_nums[nr_copy_bytes - 1] &= mask;
+	}
+
+	print_num.u64_num >>= bits_offset;
+
+	seq_printf(m, "0x%llx", print_num.u64_num);
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 }
 
 static void btf_int_seq_show(const struct btf *btf, const struct btf_type *t,
@@ -1254,7 +1296,11 @@ static void btf_int_seq_show(const struct btf *btf, const struct btf_type *t,
 	u32 int_data = btf_type_int(t);
 	u8 encoding = BTF_INT_ENCODING(int_data);
 	bool sign = encoding & BTF_INT_SIGNED;
+<<<<<<< HEAD
 	u8 nr_bits = BTF_INT_BITS(int_data);
+=======
+	u32 nr_bits = BTF_INT_BITS(int_data);
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 
 	if (bits_offset || BTF_INT_OFFSET(int_data) ||
 	    BITS_PER_BYTE_MASKED(nr_bits)) {
@@ -1292,6 +1338,7 @@ static void btf_int_seq_show(const struct btf *btf, const struct btf_type *t,
 	}
 }
 
+<<<<<<< HEAD
 static const struct btf_kind_operations int_ops = {
 	.check_meta = btf_int_check_meta,
 	.resolve = btf_df_resolve,
@@ -1351,11 +1398,14 @@ static int btf_ptr_check_member(struct btf_verifier_env *env,
 	return 0;
 }
 
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 static const struct btf_kind_operations int_ops = {
 	.check_meta = btf_int_check_meta,
 	.resolve = btf_df_resolve,
 	.check_member = btf_int_check_member,
 	.log_details = btf_int_log,
+	.seq_show = btf_int_seq_show,
 };
 
 static int btf_modifier_check_member(struct btf_verifier_env *env,
@@ -1555,21 +1605,21 @@ static struct btf_kind_operations modifier_ops = {
 	.check_meta = btf_ref_type_check_meta,
 	.resolve = btf_modifier_resolve,
 	.check_member = btf_modifier_check_member,
-<<<<<<< HEAD
 	.log_details = btf_ref_type_log,
 	.seq_show = btf_modifier_seq_show,
-=======
->>>>>>> 2587451a375d (UPSTREAM: bpf: btf: Check members of struct/union)
+<<<<<<< HEAD
 	.log_details = btf_ref_type_log,
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 };
 
 static struct btf_kind_operations ptr_ops = {
 	.check_meta = btf_ref_type_check_meta,
 	.resolve = btf_ptr_resolve,
 	.check_member = btf_ptr_check_member,
-<<<<<<< HEAD
 	.log_details = btf_ref_type_log,
 	.seq_show = btf_ptr_seq_show,
+<<<<<<< HEAD
 };
 
 static s32 btf_fwd_check_meta(struct btf_verifier_env *env,
@@ -1628,9 +1678,9 @@ static int btf_array_check_member(struct btf_verifier_env *env,
 	return 0;
 }
 
-=======
->>>>>>> 2587451a375d (UPSTREAM: bpf: btf: Check members of struct/union)
 	.log_details = btf_ref_type_log,
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 };
 
 static struct btf_kind_operations fwd_ops = {
@@ -1638,6 +1688,7 @@ static struct btf_kind_operations fwd_ops = {
 	.resolve = btf_df_resolve,
 	.check_member = btf_df_check_member,
 	.log_details = btf_ref_type_log,
+	.seq_show = btf_df_seq_show,
 };
 
 static int btf_array_check_member(struct btf_verifier_env *env,
@@ -1836,6 +1887,7 @@ static void btf_array_seq_show(const struct btf *btf, const struct btf_type *t,
 	seq_puts(m, "]");
 }
 
+<<<<<<< HEAD
 static struct btf_kind_operations array_ops = {
 	.check_meta = btf_array_check_meta,
 	.resolve = btf_array_resolve,
@@ -1869,11 +1921,14 @@ static int btf_struct_check_member(struct btf_verifier_env *env,
 	return 0;
 }
 
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 static struct btf_kind_operations array_ops = {
 	.check_meta = btf_array_check_meta,
 	.resolve = btf_array_resolve,
 	.check_member = btf_array_check_member,
 	.log_details = btf_array_log,
+	.seq_show = btf_array_seq_show,
 };
 
 static int btf_struct_check_member(struct btf_verifier_env *env,
@@ -1990,11 +2045,8 @@ static int btf_struct_resolve(struct btf_verifier_env *env,
 	 */
 	if (v->next_member) {
 		const struct btf_type *last_member_type;
-<<<<<<< HEAD
 		const struct btf_member *last_member;
 		u32 last_member_type_id;
-=======
->>>>>>> 2587451a375d (UPSTREAM: bpf: btf: Check members of struct/union)
 		const struct btf_member *last_member;
 		u16 last_member_type_id;
 
@@ -2075,6 +2127,7 @@ static void btf_struct_seq_show(const struct btf *btf, const struct btf_type *t,
 	seq_puts(m, "}");
 }
 
+<<<<<<< HEAD
 static struct btf_kind_operations struct_ops = {
 	.check_meta = btf_struct_check_meta,
 	.resolve = btf_struct_resolve,
@@ -2108,11 +2161,14 @@ static int btf_enum_check_member(struct btf_verifier_env *env,
 	return 0;
 }
 
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 static struct btf_kind_operations struct_ops = {
 	.check_meta = btf_struct_check_meta,
 	.resolve = btf_struct_resolve,
 	.check_member = btf_struct_check_member,
 	.log_details = btf_struct_log,
+	.seq_show = btf_struct_seq_show,
 };
 
 static int btf_enum_check_member(struct btf_verifier_env *env,
@@ -2203,7 +2259,11 @@ static void btf_enum_seq_show(const struct btf *btf, const struct btf_type *t,
 	for (i = 0; i < nr_enums; i++) {
 		if (v == enums[i].val) {
 			seq_printf(m, "%s",
+<<<<<<< HEAD
 				   btf_name_by_offset(btf, enums[i].name_off));
+=======
+				   btf_name_by_offset(btf, enums[i].name));
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 			return;
 		}
 	}
@@ -2211,17 +2271,21 @@ static void btf_enum_seq_show(const struct btf *btf, const struct btf_type *t,
 	seq_printf(m, "%d", v);
 }
 
+<<<<<<< HEAD
 static struct btf_kind_operations enum_ops = {
 	.check_meta = btf_enum_check_meta,
 	.resolve = btf_df_resolve,
 	.check_member = btf_enum_check_member,
 	.log_details = btf_enum_log,
 	.seq_show = btf_enum_seq_show,
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
 static struct btf_kind_operations enum_ops = {
 	.check_meta = btf_enum_check_meta,
 	.resolve = btf_df_resolve,
 	.check_member = btf_enum_check_member,
 	.log_details = btf_enum_log,
+	.seq_show = btf_enum_seq_show,
 };
 
 static const struct btf_kind_operations * const kind_ops[NR_BTF_KINDS] = {
@@ -2728,6 +2792,7 @@ void btf_type_seq_show(const struct btf *btf, u32 type_id, void *obj,
 
 	btf_type_ops(t)->seq_show(btf, t, type_id, obj, 0, m);
 }
+<<<<<<< HEAD
 
 static int btf_release(struct inode *inode, struct file *filp)
 {
@@ -2795,3 +2860,5 @@ int btf_get_info_by_fd(const struct btf *btf,
 
 	return 0;
 }
+=======
+>>>>>>> d3b3cc734170 (UPSTREAM: bpf: btf: Add pretty print capability for data with BTF type info)
