@@ -10,7 +10,7 @@
 #define BTF_MAGIC_SWAP	0x9FeB
 #define BTF_VERSION	1
 #define BTF_FLAGS_COMPR	0x01
->>>>>>> b25c33d73698 (UPSTREAM: bpf: btf: Introduce BPF Type Format (BTF))
+#define BTF_VERSION	1
 
 struct btf_header {
 	__u16	magic;
@@ -63,7 +63,7 @@ struct btf_type {
 #define BTF_STR_OFFSET(ref)	((ref) & BTF_MAX_NAME_OFFSET)
 
 struct btf_type {
-	__u32 name;
+	__u32 name_off;
 	/* "info" bits arrangement
 	 * bits  0-15: vlen (e.g. # of struct's members)
 	 * bits 16-23: unused

@@ -1961,10 +1961,10 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 						"Invalid member name_offset:%u",
 						member->name_off);
 	for_each_member(i, t, member) {
-		if (!btf_name_offset_valid(btf, member->name)) {
+		if (!btf_name_offset_valid(btf, member->name_off)) {
 			btf_verifier_log_member(env, t, member,
 						"Invalid member name_offset:%u",
-						member->name);
+						member->name_off);
 			return -EINVAL;
 		}
 
@@ -2200,7 +2200,7 @@ static s32 btf_enum_check_meta(struct btf_verifier_env *env,
 					 enums[i].name_off);
 		if (!btf_name_offset_valid(btf, enums[i].name)) {
 			btf_verifier_log(env, "\tInvalid name_offset:%u",
-					 enums[i].name);
+					 enums[i].name_off);
 			return -EINVAL;
 		}
 
@@ -2299,7 +2299,7 @@ static s32 btf_check_meta(struct btf_verifier_env *env,
 				 env->log_type_id, t->name_off);
 	if (!btf_name_offset_valid(env->btf, t->name)) {
 		btf_verifier_log(env, "[%u] Invalid name_offset:%u",
-				 env->log_type_id, t->name);
+				 env->log_type_id, t->name_off);
 		return -EINVAL;
 	}
 
