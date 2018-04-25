@@ -838,6 +838,22 @@ union bpf_attr {
  *     @addr: pointer to struct sockaddr to bind socket to
  *     @addr_len: length of sockaddr structure
  *     Return: 0 on success or negative error code
+/* The description below is an attempt at providing documentation to eBPF
+ * developers about the multiple available eBPF helper functions. It can be
+ * parsed and used to produce a manual page. The workflow is the following,
+ * and requires the rst2man utility:
+ *
+ *     $ ./scripts/bpf_helpers_doc.py \
+ *             --filename include/uapi/linux/bpf.h > /tmp/bpf-helpers.rst
+ *     $ rst2man /tmp/bpf-helpers.rst > /tmp/bpf-helpers.7
+ *     $ man /tmp/bpf-helpers.7
+ *
+ * Note that in order to produce this external documentation, some RST
+ * formatting is used in the descriptions to get "bold" and "italics" in
+ * manual pages. Also note that the few trailing white spaces are
+ * intentional, removing them would break paragraphs for rst2man.
+ *
+ * Start of BPF helper function descriptions:
  */
 #define __BPF_FUNC_MAPPER(FN)		\
 	FN(unspec),			\
