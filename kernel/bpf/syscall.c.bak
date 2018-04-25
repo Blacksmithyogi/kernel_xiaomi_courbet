@@ -27,10 +27,7 @@
 #include <linux/cred.h>
 #include <linux/timekeeping.h>
 #include <linux/ctype.h>
-<<<<<<< HEAD
-=======
 #include <linux/btf.h>
->>>>>>> 8318edaa6582 (UPSTREAM: bpf: btf: Add pretty print support to the basic arraymap)
 
 #define IS_FD_ARRAY(map) ((map)->map_type == BPF_MAP_TYPE_PROG_ARRAY || \
 			   (map)->map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY || \
@@ -422,12 +419,9 @@ static int bpf_obj_name_cpy(char *dst, const char *src)
 	return 0;
 }
 
-<<<<<<< HEAD
 #define BPF_MAP_CREATE_LAST_FIELD map_name
 #define BPF_MAP_CREATE_LAST_FIELD map_ifindex
-=======
 #define BPF_MAP_CREATE_LAST_FIELD btf_value_id
->>>>>>> 8318edaa6582 (UPSTREAM: bpf: btf: Add pretty print support to the basic arraymap)
 /* called via syscall */
 static int map_create(union bpf_attr *attr)
 {
@@ -2103,6 +2097,10 @@ static int bpf_prog_get_info_by_fd(struct bpf_prog *prog,
 	info.load_time = prog->aux->load_time;
 	info.created_by_uid = from_kuid_munged(current_user_ns(),
 					       prog->aux->user->uid);
+<<<<<<< HEAD
+=======
+	info.gpl_compatible = prog->gpl_compatible;
+>>>>>>> 2328fb993baa (UPSTREAM: bpf: Add gpl_compatible flag to struct bpf_prog_info)
 
 	memcpy(info.tag, prog->tag, sizeof(prog->tag));
 	memcpy(info.name, prog->aux->name, sizeof(prog->aux->name));
