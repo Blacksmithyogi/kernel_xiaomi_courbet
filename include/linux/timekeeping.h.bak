@@ -228,9 +228,12 @@ extern void read_persistent_clock64(struct timespec64 *ts);
 extern void read_boot_clock64(struct timespec64 *ts);
 extern int update_persistent_clock64(struct timespec64 now);
 
+<<<<<<< HEAD
+=======
 /*
  * deprecated aliases, don't use in new code
  */
 #define getnstimeofday64(ts)		ktime_get_real_ts64(ts)
+>>>>>>> 59f714618be9 (UPSTREAM: timekeeping: Clean up ktime_get_real_ts64)
 
 #endif
