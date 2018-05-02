@@ -118,6 +118,7 @@ enum bpf_map_type {
 	BPF_MAP_TYPE_SOCKMAP,
 	BPF_MAP_TYPE_DEVMAP_HASH = 25,
 	BPF_MAP_TYPE_CPUMAP,
+	BPF_MAP_TYPE_XSKMAP,
 };
 
 enum bpf_prog_type {

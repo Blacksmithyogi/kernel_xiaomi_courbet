@@ -22,6 +22,7 @@
 #include <linux/stringify.h>
 #include <linux/bsearch.h>
 #include <linux/sort.h>
+#include <linux/perf_event.h>
 
 #include "disasm.h"
 
@@ -2199,8 +2200,11 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 		    func_id != BPF_FUNC_map_lookup_elem)
 			goto error;
 		break;
-	/* Restrict bpf side of cpumap, open when use-cases appear */
+	/* Restrict bpf side of cpumap and xskmap, open when use-cases
+	 * appear.
+	 */
 	case BPF_MAP_TYPE_CPUMAP:
+	case BPF_MAP_TYPE_XSKMAP:
 		if (func_id != BPF_FUNC_redirect_map)
 			goto error;
 		break;
@@ -2247,8 +2251,13 @@ static int check_map_func_compatibility(struct bpf_verifier_env *env,
 		break;
 	case BPF_FUNC_redirect_map:
 		if (map->map_type != BPF_MAP_TYPE_DEVMAP &&
+<<<<<<< HEAD
 		    map->map_type != BPF_MAP_TYPE_DEVMAP_HASH)
 		    map->map_type != BPF_MAP_TYPE_CPUMAP)
+=======
+		    map->map_type != BPF_MAP_TYPE_CPUMAP &&
+		    map->map_type != BPF_MAP_TYPE_XSKMAP)
+>>>>>>> b6c4ec30877a (UPSTREAM: bpf: introduce new bpf AF_XDP map type BPF_MAP_TYPE_XSKMAP)
 			goto error;
 		break;
 	case BPF_FUNC_sk_redirect_map:
@@ -2559,6 +2568,24 @@ static int check_helper_call(struct bpf_verifier_env *env, int func_id, int insn
 	err = check_map_func_compatibility(env, meta.map_ptr, func_id);
 	if (err)
 		return err;
+
+	if (func_id == BPF_FUNC_get_stack && !env->prog->has_callchain_buf) {
+		const char *err_str;
+
+#ifdef CONFIG_PERF_EVENTS
+		err = get_callchain_buffers(sysctl_perf_event_max_stack);
+		err_str = "cannot get callchain buffer for func %s#%d\n";
+#else
+		err = -ENOTSUPP;
+		err_str = "func %s#%d not supported without CONFIG_PERF_EVENTS\n";
+#endif
+		if (err) {
+			verbose(env, err_str, func_id_name(func_id), func_id);
+			return err;
+		}
+
+		env->prog->has_callchain_buf = true;
+	}
 
 	if (changes_data)
 		clear_all_pkt_pointers(env);
@@ -3292,10 +3319,7 @@ static int adjust_scalar_min_max_vals(struct bpf_verifier_env *env,
 			dst_reg->umin_value <<= umin_val;
 			dst_reg->umax_value <<= umax_val;
 		}
-		if (src_known)
-			dst_reg->var_off = tnum_lshift(dst_reg->var_off, umin_val);
-		else
-			dst_reg->var_off = tnum_lshift(tnum_unknown, umin_val);
+		dst_reg->var_off = tnum_lshift(dst_reg->var_off, umin_val);
 		/* We may learn something more from the var_off */
 		__update_reg_bounds(dst_reg);
 		break;
@@ -3323,14 +3347,33 @@ static int adjust_scalar_min_max_vals(struct bpf_verifier_env *env,
 		 */
 		dst_reg->smin_value = S64_MIN;
 		dst_reg->smax_value = S64_MAX;
-		if (src_known)
-			dst_reg->var_off = tnum_rshift(dst_reg->var_off,
-						       umin_val);
-		else
-			dst_reg->var_off = tnum_rshift(tnum_unknown, umin_val);
+		dst_reg->var_off = tnum_rshift(dst_reg->var_off, umin_val);
 		dst_reg->umin_value >>= umax_val;
 		dst_reg->umax_value >>= umin_val;
 		/* We may learn something more from the var_off */
+		__update_reg_bounds(dst_reg);
+		break;
+	case BPF_ARSH:
+		if (umax_val >= insn_bitness) {
+			/* Shifts greater than 31 or 63 are undefined.
+			 * This includes shifts by a negative number.
+			 */
+			mark_reg_unknown(env, regs, insn->dst_reg);
+			break;
+		}
+
+		/* Upon reaching here, src_known is true and
+		 * umax_val is equal to umin_val.
+		 */
+		dst_reg->smin_value >>= umin_val;
+		dst_reg->smax_value >>= umin_val;
+		dst_reg->var_off = tnum_arshift(dst_reg->var_off, umin_val);
+
+		/* blow away the dst_reg umin_value/umax_value and rely on
+		 * dst_reg var_off to refine the result.
+		 */
+		dst_reg->umin_value = 0;
+		dst_reg->umax_value = U64_MAX;
 		__update_reg_bounds(dst_reg);
 		break;
 	default:
@@ -4285,6 +4328,7 @@ static int check_return_code(struct bpf_verifier_env *env)
 			range = tnum_range(1, 1);
 	case BPF_PROG_TYPE_CGROUP_SKB:
 	case BPF_PROG_TYPE_CGROUP_SOCK:
+	case BPF_PROG_TYPE_CGROUP_SOCK_ADDR:
 	case BPF_PROG_TYPE_SOCK_OPS:
 	case BPF_PROG_TYPE_CGROUP_DEVICE:
 		break;
@@ -6069,13 +6113,10 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
 			insn      = new_prog->insnsi + i + delta;
 		}
 patch_call_imm:
-<<<<<<< HEAD
 		fn = prog->aux->ops->get_func_proto(insn->imm, env->prog);
 		fn = prog->aux->vops->get_func_proto(insn->imm);
 		fn = env->ops->get_func_proto(insn->imm);
-=======
 		fn = env->ops->get_func_proto(insn->imm, env->prog);
->>>>>>> ae9d551d4502 (BACKPORT: bpf: Check attach type at prog load time)
 		/* all functions that have prototype and verifier allowed
 		 * programs to call them, must be real in-kernel functions
 		 */
