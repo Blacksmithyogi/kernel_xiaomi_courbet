@@ -179,8 +179,6 @@
  * The hard limit is S32_MAX.
  */
 #define BTF_MAX_SIZE (16 * 1024 * 1024)
-/* 64k. We can raise it later. The hard limit is S32_MAX. */
-#define BTF_MAX_NR_TYPES 65535
 
 #define for_each_member(i, struct_type, member)			\
 	for (i = 0, member = btf_type_member(struct_type);	\
@@ -448,8 +446,6 @@ static const char *btf_int_encoding_str(u8 encoding)
 		return "CHAR";
 	else if (encoding == BTF_INT_BOOL)
 		return "BOOL";
-	else if (encoding == BTF_INT_VARARGS)
-		return "VARARGS";
 	else
 		return "UNKN";
 }
@@ -500,8 +496,8 @@ static const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 		return &btf->strings[offset];
 	if (!BTF_STR_OFFSET(offset))
 		return "(anon)";
-	else if (BTF_STR_OFFSET(offset) < btf->hdr.str_len)
-		return &btf->strings[BTF_STR_OFFSET(offset)];
+	else if (offset < btf->hdr.str_len)
+		return &btf->strings[offset];
 	else
 		return "(invalid-name-offset)";
 }
@@ -1790,12 +1786,12 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
 	 */
-	if (!array->type || BTF_TYPE_PARENT(array->type)) {
+	if (!array->type || !BTF_TYPE_ID_VALID(array->type)) {
 		btf_verifier_log_type(env, t, "Invalid elem");
 		return -EINVAL;
 	}
 
-	if (!array->index_type || BTF_TYPE_PARENT(array->index_type)) {
+	if (!array->index_type || !BTF_TYPE_ID_VALID(array->index_type)) {
 		btf_verifier_log_type(env, t, "Invalid index");
 		return -EINVAL;
 	}
@@ -2051,6 +2047,7 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 
 		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
 		if (!member->type || BTF_TYPE_PARENT(member->type)) {
+		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
 			btf_verifier_log_member(env, t, member,
 						"Invalid type_id");
 			return -EINVAL;

@@ -179,8 +179,6 @@
  * The hard limit is S32_MAX.
  */
 #define BTF_MAX_SIZE (16 * 1024 * 1024)
-/* 64k. We can raise it later. The hard limit is S32_MAX. */
-#define BTF_MAX_NR_TYPES 65535
 
 #define for_each_member(i, struct_type, member)			\
 	for (i = 0, member = btf_type_member(struct_type);	\
@@ -448,8 +446,6 @@ static const char *btf_int_encoding_str(u8 encoding)
 		return "CHAR";
 	else if (encoding == BTF_INT_BOOL)
 		return "BOOL";
-	else if (encoding == BTF_INT_VARARGS)
-		return "VARARGS";
 	else
 		return "UNKN";
 }
@@ -488,20 +484,26 @@ static bool btf_name_offset_valid(const struct btf *btf, u32 offset)
 {
 	return BTF_STR_OFFSET_VALID(offset) &&
 		offset < btf->hdr.str_len;
+<<<<<<< HEAD
 	return !BTF_STR_TBL_ELF_ID(offset) &&
 		BTF_STR_OFFSET(offset) < btf->hdr.str_len;
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 }
 
 static const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 {
 	if (!offset)
+<<<<<<< HEAD
 		return "(anon)";
 	else if (offset < btf->hdr.str_len)
 		return &btf->strings[offset];
 	if (!BTF_STR_OFFSET(offset))
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		return "(anon)";
-	else if (BTF_STR_OFFSET(offset) < btf->hdr.str_len)
-		return &btf->strings[BTF_STR_OFFSET(offset)];
+	else if (offset < btf->hdr.str_len)
+		return &btf->strings[offset];
 	else
 		return "(invalid-name-offset)";
 }
@@ -520,11 +522,8 @@ static const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
  */
 static bool btf_type_int_is_regular(const struct btf_type *t)
 {
-<<<<<<< HEAD
 	u8 nr_bits, nr_bytes;
-=======
 	u16 nr_bits, nr_bytes;
->>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	u32 int_data;
 
 	int_data = btf_type_int(t);
@@ -688,14 +687,20 @@ static int btf_add_type(struct btf_verifier_env *env, struct btf_type *t)
 		u32 expand_by, new_size;
 
 		if (btf->types_size == BTF_MAX_TYPE) {
+<<<<<<< HEAD
 		if (btf->types_size == BTF_MAX_NR_TYPES) {
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 			btf_verifier_log(env, "Exceeded max num of types");
 			return -E2BIG;
 		}
 
 		expand_by = max_t(u32, btf->types_size >> 2, 16);
 		new_size = min_t(u32, BTF_MAX_TYPE,
+<<<<<<< HEAD
 		new_size = min_t(u32, BTF_MAX_NR_TYPES,
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 				 btf->types_size + expand_by);
 
 		new_types = kvzalloc(new_size * sizeof(*new_types),
@@ -1244,8 +1249,11 @@ static s32 btf_int_check_meta(struct btf_verifier_env *env,
 	    encoding != BTF_INT_SIGNED &&
 	    encoding != BTF_INT_CHAR &&
 	    encoding != BTF_INT_BOOL) {
+<<<<<<< HEAD
 	    encoding != BTF_INT_BOOL &&
 	    encoding != BTF_INT_VARARGS) {
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		btf_verifier_log_type(env, t, "Unsupported encoding");
 		return -ENOTSUPP;
 	}
@@ -1506,7 +1514,10 @@ static int btf_ref_type_check_meta(struct btf_verifier_env *env,
 	}
 
 	if (!BTF_TYPE_ID_VALID(t->type)) {
+<<<<<<< HEAD
 	if (BTF_TYPE_PARENT(t->type)) {
+=======
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		btf_verifier_log_type(env, t, "Invalid type_id");
 		return -EINVAL;
 	}
@@ -1770,7 +1781,6 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
-<<<<<<< HEAD
 	if (t->size) {
 		btf_verifier_log_type(env, t, "size != 0");
 		return -EINVAL;
@@ -1791,17 +1801,15 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	 */
 	/* Array elem cannot be in type void,
 	 * so !array->type is not allowed.
-=======
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
->>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	 */
-	if (!array->type || BTF_TYPE_PARENT(array->type)) {
+	if (!array->type || !BTF_TYPE_ID_VALID(array->type)) {
 		btf_verifier_log_type(env, t, "Invalid elem");
 		return -EINVAL;
 	}
 
-	if (!array->index_type || BTF_TYPE_PARENT(array->index_type)) {
+	if (!array->index_type || !BTF_TYPE_ID_VALID(array->index_type)) {
 		btf_verifier_log_type(env, t, "Invalid index");
 		return -EINVAL;
 	}
@@ -1817,7 +1825,6 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	const struct btf_array *array = btf_type_array(v->t);
 	const struct btf_type *elem_type, *index_type;
 	u32 elem_type_id, index_type_id;
-<<<<<<< HEAD
 	struct btf *btf = env->btf;
 	u32 elem_size;
 
@@ -1844,8 +1851,6 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	elem_type_id = array->type;
 	const struct btf_type *elem_type;
 	u32 elem_type_id = array->type;
-=======
->>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	struct btf *btf = env->btf;
 	u32 elem_size;
 
@@ -1890,7 +1895,6 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	if (btf_type_is_int(elem_type) && !btf_type_int_is_regular(elem_type)) {
 		btf_verifier_log_type(env, v->t, "Invalid array of int");
 		return -EINVAL;
-<<<<<<< HEAD
 	if (btf_type_is_int(elem_type)) {
 		int int_type_data = btf_type_int(elem_type);
 		u16 nr_bits = BTF_INT_BITS(int_type_data);
@@ -1907,8 +1911,6 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 					      "Invalid array of int");
 			return -EINVAL;
 		}
-=======
->>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	}
 
 	if (array->nelems && elem_size > U32_MAX / array->nelems) {
@@ -2060,9 +2062,13 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 		}
 
 		/* A member cannot be in type void */
+<<<<<<< HEAD
 
 		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
 		if (!member->type || BTF_TYPE_PARENT(member->type)) {
+=======
+		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
+>>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 			btf_verifier_log_member(env, t, member,
 						"Invalid type_id");
 			return -EINVAL;
