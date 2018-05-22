@@ -197,7 +197,6 @@ static DEFINE_SPINLOCK(btf_idr_lock);
 
 struct btf {
 	void *data;
-<<<<<<< HEAD
 	struct btf_type **types;
 	u32 *resolved_ids;
 	u32 *resolved_sizes;
@@ -245,8 +244,6 @@ struct btf {
 		struct btf_header *hdr;
 		void *data;
 	};
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	struct btf_type **types;
 	u32 *resolved_ids;
 	u32 *resolved_sizes;
@@ -523,7 +520,11 @@ static const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
  */
 static bool btf_type_int_is_regular(const struct btf_type *t)
 {
+<<<<<<< HEAD
 	u8 nr_bits, nr_bytes;
+=======
+	u16 nr_bits, nr_bytes;
+>>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	u32 int_data;
 
 	int_data = btf_type_int(t);
@@ -641,10 +642,7 @@ static void btf_verifier_log_member(struct btf_verifier_env *env,
 
 static void btf_verifier_log_hdr(struct btf_verifier_env *env,
 				 u32 btf_data_size)
-<<<<<<< HEAD
 static void btf_verifier_log_hdr(struct btf_verifier_env *env)
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 {
 	struct bpf_verifier_log *log = &env->log;
 	const struct btf *btf = env->btf;
@@ -654,7 +652,6 @@ static void btf_verifier_log_hdr(struct btf_verifier_env *env)
 		return;
 
 	hdr = &btf->hdr;
-<<<<<<< HEAD
 	__btf_verifier_log(log, "magic: 0x%x\n", hdr->magic);
 	__btf_verifier_log(log, "version: %u\n", hdr->version);
 	__btf_verifier_log(log, "flags: 0x%x\n", hdr->flags);
@@ -665,8 +662,6 @@ static void btf_verifier_log_hdr(struct btf_verifier_env *env)
 	__btf_verifier_log(log, "str_len: %u\n", hdr->str_len);
 	__btf_verifier_log(log, "btf_total_size: %u\n", btf_data_size);
 	hdr = btf->hdr;
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	__btf_verifier_log(log, "magic: 0x%x\n", hdr->magic);
 	__btf_verifier_log(log, "version: %u\n", hdr->version);
 	__btf_verifier_log(log, "flags: 0x%x\n", hdr->flags);
@@ -1775,6 +1770,7 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
+<<<<<<< HEAD
 	if (t->size) {
 		btf_verifier_log_type(env, t, "size != 0");
 		return -EINVAL;
@@ -1795,9 +1791,18 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	 */
 	/* Array elem cannot be in type void,
 	 * so !array->type is not allowed.
+=======
+	/* Array elem type and index type cannot be in type void,
+	 * so !array->type and !array->index_type are not allowed.
+>>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	 */
 	if (!array->type || BTF_TYPE_PARENT(array->type)) {
-		btf_verifier_log_type(env, t, "Invalid type_id");
+		btf_verifier_log_type(env, t, "Invalid elem");
+		return -EINVAL;
+	}
+
+	if (!array->index_type || BTF_TYPE_PARENT(array->index_type)) {
+		btf_verifier_log_type(env, t, "Invalid index");
 		return -EINVAL;
 	}
 
@@ -1812,6 +1817,7 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	const struct btf_array *array = btf_type_array(v->t);
 	const struct btf_type *elem_type, *index_type;
 	u32 elem_type_id, index_type_id;
+<<<<<<< HEAD
 	struct btf *btf = env->btf;
 	u32 elem_size;
 
@@ -1838,9 +1844,32 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	elem_type_id = array->type;
 	const struct btf_type *elem_type;
 	u32 elem_type_id = array->type;
+=======
+>>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	struct btf *btf = env->btf;
 	u32 elem_size;
 
+	/* Check array->index_type */
+	index_type_id = array->index_type;
+	index_type = btf_type_by_id(btf, index_type_id);
+	if (btf_type_is_void_or_null(index_type)) {
+		btf_verifier_log_type(env, v->t, "Invalid index");
+		return -EINVAL;
+	}
+
+	if (!env_type_is_resolve_sink(env, index_type) &&
+	    !env_type_is_resolved(env, index_type_id))
+		return env_stack_push(env, index_type, index_type_id);
+
+	index_type = btf_type_id_size(btf, &index_type_id, NULL);
+	if (!index_type || !btf_type_is_int(index_type) ||
+	    !btf_type_int_is_regular(index_type)) {
+		btf_verifier_log_type(env, v->t, "Invalid index");
+		return -EINVAL;
+	}
+
+	/* Check array->type */
+	elem_type_id = array->type;
 	elem_type = btf_type_by_id(btf, elem_type_id);
 	if (btf_type_is_void_or_null(elem_type)) {
 		btf_verifier_log_type(env, v->t,
@@ -1861,6 +1890,7 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	if (btf_type_is_int(elem_type) && !btf_type_int_is_regular(elem_type)) {
 		btf_verifier_log_type(env, v->t, "Invalid array of int");
 		return -EINVAL;
+<<<<<<< HEAD
 	if (btf_type_is_int(elem_type)) {
 		int int_type_data = btf_type_int(elem_type);
 		u16 nr_bits = BTF_INT_BITS(int_type_data);
@@ -1877,6 +1907,8 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 					      "Invalid array of int");
 			return -EINVAL;
 		}
+=======
+>>>>>>> 774930dc4c26 (UPSTREAM: bpf: btf: Check array->index_type)
 	}
 
 	if (array->nelems && elem_size > U32_MAX / array->nelems) {
@@ -2378,12 +2410,9 @@ static int btf_check_all_metas(struct btf_verifier_env *env)
 	void *cur, *end;
 
 	hdr = &btf->hdr;
-<<<<<<< HEAD
 	cur = btf->nohdr_data + hdr->type_off;
 	end = cur + hdr->type_len;
 	hdr = btf->hdr;
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	cur = btf->nohdr_data + hdr->type_off;
 	end = btf->nohdr_data + hdr->type_len;
 
@@ -2497,7 +2526,6 @@ static int btf_check_all_types(struct btf_verifier_env *env)
 static int btf_parse_type_sec(struct btf_verifier_env *env)
 {
 	const struct btf_header *hdr = &env->btf->hdr;
-<<<<<<< HEAD
 	int err;
 
 	/* Type section must align to 4 bytes */
@@ -2518,8 +2546,6 @@ static int btf_parse_type_sec(struct btf_verifier_env *env)
 	return btf_check_all_types(env);
 static int btf_parse_type_sec(struct btf_verifier_env *env)
 {
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	int err;
 
 	/* Type section must align to 4 bytes */
@@ -2547,7 +2573,6 @@ static int btf_parse_str_sec(struct btf_verifier_env *env)
 	const char *start, *end;
 
 	hdr = &btf->hdr;
-<<<<<<< HEAD
 	start = btf->nohdr_data + hdr->str_off;
 	end = start + hdr->str_len;
 
@@ -2557,8 +2582,6 @@ static int btf_parse_str_sec(struct btf_verifier_env *env)
 	}
 
 	hdr = btf->hdr;
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	start = btf->nohdr_data + hdr->str_off;
 	end = start + hdr->str_len;
 
@@ -2594,12 +2617,9 @@ static int btf_sec_info_cmp(const void *a, const void *b)
 static int btf_check_sec_info(struct btf_verifier_env *env,
 			      u32 btf_data_size)
 {
-<<<<<<< HEAD
 	struct btf_sec_info secs[ARRAY_SIZE(btf_sec_info_offset)];
-=======
 	const unsigned int nr_secs = ARRAY_SIZE(btf_sec_info_offset);
 	struct btf_sec_info secs[nr_secs];
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	u32 total, expected_total, i;
 	const struct btf_header *hdr;
 	const struct btf *btf;
@@ -2608,30 +2628,24 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 	hdr = &btf->hdr;
 
 	/* Populate the secs from hdr */
-<<<<<<< HEAD
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++)
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
 	sort(secs, ARRAY_SIZE(btf_sec_info_offset),
 	     sizeof(struct btf_sec_info), btf_sec_info_cmp, NULL);
-=======
 	for (i = 0; i < nr_secs; i++)
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
 	sort(secs, nr_secs, sizeof(struct btf_sec_info),
 	     btf_sec_info_cmp, NULL);
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 
 	/* Check for gaps and overlap among sections */
 	total = 0;
 	expected_total = btf_data_size - hdr->hdr_len;
-<<<<<<< HEAD
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++) {
-=======
 	for (i = 0; i < nr_secs; i++) {
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 		if (expected_total < secs[i].off) {
 			btf_verifier_log(env, "Invalid section offset");
 			return -EINVAL;
@@ -2662,7 +2676,6 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 	return 0;
 }
 
-<<<<<<< HEAD
 static int btf_parse_hdr(struct btf_verifier_env *env)
 {
 	u32 hdr_len, hdr_copy, btf_data_size;
@@ -2683,10 +2696,9 @@ static int btf_parse_hdr(struct btf_verifier_env *env)
 	hdr_len = hdr->hdr_len;
 	if (btf_data_size < hdr_len) {
 static int btf_parse_hdr(struct btf_verifier_env *env)
-=======
 static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 			 u32 btf_data_size)
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
+
 {
 	const struct btf_header *hdr;
 	u32 hdr_len, hdr_copy;
@@ -2719,7 +2731,6 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 		return -EINVAL;
 	}
 
-<<<<<<< HEAD
 	/* Ensure the unsupported header fields are zero */
 	if (hdr_len > sizeof(btf->hdr)) {
 		u8 *expected_zero = btf->data + sizeof(btf->hdr);
@@ -2744,7 +2755,6 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 	btf_verifier_log_hdr(env, btf_data_size);
 
 	btf_verifier_log_hdr(env);
-=======
 	err = bpf_check_uarg_tail_zero(btf_data, sizeof(btf->hdr), hdr_len);
 	if (err) {
 		if (err == -E2BIG)
@@ -2759,7 +2769,6 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 	hdr = &btf->hdr;
 
 	btf_verifier_log_hdr(env, btf_data_size);
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 
 	if (hdr->magic != BTF_MAGIC) {
 		btf_verifier_log(env, "Invalid magic");
@@ -2777,11 +2786,8 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 	}
 
 	if (btf_data_size == hdr->hdr_len) {
-<<<<<<< HEAD
 	meta_left = btf->data_size - sizeof(*hdr);
 	if (!meta_left) {
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 		btf_verifier_log(env, "No data");
 		return -EINVAL;
 	}
@@ -2789,7 +2795,6 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 	err = btf_check_sec_info(env, btf_data_size);
 	if (err)
 		return err;
-<<<<<<< HEAD
 	if (meta_left < hdr->type_off || hdr->str_off <= hdr->type_off ||
 	    /* Type section must align to 4 bytes */
 	    hdr->type_off & (sizeof(u32) - 1)) {
@@ -2804,8 +2809,6 @@ static int btf_parse_hdr(struct btf_verifier_env *env, void __user *btf_data,
 	}
 
 	btf->nohdr_data = btf->hdr + 1;
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 
 	return 0;
 }
@@ -2849,13 +2852,10 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 		goto errout;
 	}
 	env->btf = btf;
-<<<<<<< HEAD
-=======
 
 	err = btf_parse_hdr(env, btf_data, btf_data_size);
 	if (err)
 		goto errout;
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 
 	data = kvmalloc(btf_data_size, GFP_KERNEL | __GFP_NOWARN);
 	if (!data) {
@@ -2872,7 +2872,6 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 		goto errout;
 	}
 
-<<<<<<< HEAD
 	env->btf = btf;
 
 	err = btf_parse_hdr(env);
@@ -2881,8 +2880,6 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 
 	btf->nohdr_data = btf->data + btf->hdr.hdr_len;
 
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 	err = btf_parse_str_sec(env);
 	if (err)
 		goto errout;
@@ -2892,10 +2889,7 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 		goto errout;
 
 	if (log->level && bpf_verifier_log_full(log)) {
-<<<<<<< HEAD
 	if (!err && log->level && bpf_verifier_log_full(log)) {
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 		err = -ENOSPC;
 		goto errout;
 	}
@@ -2903,14 +2897,11 @@ static struct btf *btf_parse(void __user *btf_data, u32 btf_data_size,
 	btf_verifier_env_free(env);
 	refcount_set(&btf->refcnt, 1);
 	return btf;
-<<<<<<< HEAD
 	if (!err) {
 		btf_verifier_env_free(env);
 		refcount_set(&btf->refcnt, 1);
 		return btf;
 	}
-=======
->>>>>>> 09d2076a8f8e (UPSTREAM: bpf: btf: Change how section is supported in btf_header)
 
 errout:
 	btf_verifier_env_free(env);

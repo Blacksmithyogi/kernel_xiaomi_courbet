@@ -521,6 +521,7 @@ static const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
 static bool btf_type_int_is_regular(const struct btf_type *t)
 {
 	u8 nr_bits, nr_bytes;
+	u16 nr_bits, nr_bytes;
 	u32 int_data;
 
 	int_data = btf_type_int(t);
@@ -1786,9 +1787,16 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	 */
 	/* Array elem cannot be in type void,
 	 * so !array->type is not allowed.
+	/* Array elem type and index type cannot be in type void,
+	 * so !array->type and !array->index_type are not allowed.
 	 */
 	if (!array->type || BTF_TYPE_PARENT(array->type)) {
-		btf_verifier_log_type(env, t, "Invalid type_id");
+		btf_verifier_log_type(env, t, "Invalid elem");
+		return -EINVAL;
+	}
+
+	if (!array->index_type || BTF_TYPE_PARENT(array->index_type)) {
+		btf_verifier_log_type(env, t, "Invalid index");
 		return -EINVAL;
 	}
 
@@ -1832,6 +1840,27 @@ static int btf_array_resolve(struct btf_verifier_env *env,
 	struct btf *btf = env->btf;
 	u32 elem_size;
 
+	/* Check array->index_type */
+	index_type_id = array->index_type;
+	index_type = btf_type_by_id(btf, index_type_id);
+	if (btf_type_is_void_or_null(index_type)) {
+		btf_verifier_log_type(env, v->t, "Invalid index");
+		return -EINVAL;
+	}
+
+	if (!env_type_is_resolve_sink(env, index_type) &&
+	    !env_type_is_resolved(env, index_type_id))
+		return env_stack_push(env, index_type, index_type_id);
+
+	index_type = btf_type_id_size(btf, &index_type_id, NULL);
+	if (!index_type || !btf_type_is_int(index_type) ||
+	    !btf_type_int_is_regular(index_type)) {
+		btf_verifier_log_type(env, v->t, "Invalid index");
+		return -EINVAL;
+	}
+
+	/* Check array->type */
+	elem_type_id = array->type;
 	elem_type = btf_type_by_id(btf, elem_type_id);
 	if (btf_type_is_void_or_null(elem_type)) {
 		btf_verifier_log_type(env, v->t,
