@@ -2623,8 +2623,8 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
-	sort(secs, nr_secs, sizeof(struct btf_sec_info),
-	     btf_sec_info_cmp, NULL);
+	sort(secs, ARRAY_SIZE(btf_sec_info_offset),
+	     sizeof(struct btf_sec_info), btf_sec_info_cmp, NULL);
 
 	/* Check for gaps and overlap among sections */
 	total = 0;

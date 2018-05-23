@@ -484,23 +484,17 @@ static bool btf_name_offset_valid(const struct btf *btf, u32 offset)
 {
 	return BTF_STR_OFFSET_VALID(offset) &&
 		offset < btf->hdr.str_len;
-<<<<<<< HEAD
 	return !BTF_STR_TBL_ELF_ID(offset) &&
 		BTF_STR_OFFSET(offset) < btf->hdr.str_len;
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 }
 
 static const char *btf_name_by_offset(const struct btf *btf, u32 offset)
 {
 	if (!offset)
-<<<<<<< HEAD
 		return "(anon)";
 	else if (offset < btf->hdr.str_len)
 		return &btf->strings[offset];
 	if (!BTF_STR_OFFSET(offset))
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		return "(anon)";
 	else if (offset < btf->hdr.str_len)
 		return &btf->strings[offset];
@@ -687,20 +681,14 @@ static int btf_add_type(struct btf_verifier_env *env, struct btf_type *t)
 		u32 expand_by, new_size;
 
 		if (btf->types_size == BTF_MAX_TYPE) {
-<<<<<<< HEAD
 		if (btf->types_size == BTF_MAX_NR_TYPES) {
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 			btf_verifier_log(env, "Exceeded max num of types");
 			return -E2BIG;
 		}
 
 		expand_by = max_t(u32, btf->types_size >> 2, 16);
 		new_size = min_t(u32, BTF_MAX_TYPE,
-<<<<<<< HEAD
 		new_size = min_t(u32, BTF_MAX_NR_TYPES,
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 				 btf->types_size + expand_by);
 
 		new_types = kvzalloc(new_size * sizeof(*new_types),
@@ -1249,11 +1237,8 @@ static s32 btf_int_check_meta(struct btf_verifier_env *env,
 	    encoding != BTF_INT_SIGNED &&
 	    encoding != BTF_INT_CHAR &&
 	    encoding != BTF_INT_BOOL) {
-<<<<<<< HEAD
 	    encoding != BTF_INT_BOOL &&
 	    encoding != BTF_INT_VARARGS) {
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		btf_verifier_log_type(env, t, "Unsupported encoding");
 		return -ENOTSUPP;
 	}
@@ -1514,10 +1499,7 @@ static int btf_ref_type_check_meta(struct btf_verifier_env *env,
 	}
 
 	if (!BTF_TYPE_ID_VALID(t->type)) {
-<<<<<<< HEAD
 	if (BTF_TYPE_PARENT(t->type)) {
-=======
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 		btf_verifier_log_type(env, t, "Invalid type_id");
 		return -EINVAL;
 	}
@@ -2062,13 +2044,10 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 		}
 
 		/* A member cannot be in type void */
-<<<<<<< HEAD
 
 		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
 		if (!member->type || BTF_TYPE_PARENT(member->type)) {
-=======
 		if (!member->type || !BTF_TYPE_ID_VALID(member->type)) {
->>>>>>> 9dccb5217464 (UPSTREAM: bpf: btf: Remove unused bits from uapi/linux/btf.h)
 			btf_verifier_log_member(env, t, member,
 						"Invalid type_id");
 			return -EINVAL;
@@ -2624,8 +2603,11 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 			      u32 btf_data_size)
 {
 	struct btf_sec_info secs[ARRAY_SIZE(btf_sec_info_offset)];
+<<<<<<< HEAD
 	const unsigned int nr_secs = ARRAY_SIZE(btf_sec_info_offset);
 	struct btf_sec_info secs[nr_secs];
+=======
+>>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 	u32 total, expected_total, i;
 	const struct btf_header *hdr;
 	const struct btf *btf;
@@ -2635,23 +2617,29 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 
 	/* Populate the secs from hdr */
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++)
+<<<<<<< HEAD
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
 	sort(secs, ARRAY_SIZE(btf_sec_info_offset),
 	     sizeof(struct btf_sec_info), btf_sec_info_cmp, NULL);
 	for (i = 0; i < nr_secs; i++)
+=======
+>>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
-	sort(secs, nr_secs, sizeof(struct btf_sec_info),
-	     btf_sec_info_cmp, NULL);
+	sort(secs, ARRAY_SIZE(btf_sec_info_offset),
+	     sizeof(struct btf_sec_info), btf_sec_info_cmp, NULL);
 
 	/* Check for gaps and overlap among sections */
 	total = 0;
 	expected_total = btf_data_size - hdr->hdr_len;
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++) {
+<<<<<<< HEAD
 	for (i = 0; i < nr_secs; i++) {
+=======
+>>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 		if (expected_total < secs[i].off) {
 			btf_verifier_log(env, "Invalid section offset");
 			return -EINVAL;
