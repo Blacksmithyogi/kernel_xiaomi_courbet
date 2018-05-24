@@ -62,9 +62,12 @@
 	(BPF_F_NUMA_NODE | BPF_F_RDONLY | BPF_F_WRONLY)
 
 struct bpf_dtab_netdev {
+<<<<<<< HEAD
 	struct net_device *dev;
 	struct hlist_node index_hlist;
+=======
 	struct net_device *dev; /* must be first member, due to tracepoint */
+>>>>>>> a15d2599b2a1 (BACKPORT: bpf: devmap introduce dev_map_enqueue)
 	struct bpf_dtab *dtab;
 	unsigned int bit;
 	struct rcu_head rcu;
