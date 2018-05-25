@@ -833,6 +833,7 @@ static bool env_type_is_resolve_sink(const struct btf_verifier_env *env,
 			!btf_type_is_struct(next_type);
 	default:
 		BUG();
+<<<<<<< HEAD
 	}
 }
 
@@ -1022,6 +1023,8 @@ static bool env_type_is_resolve_sink(const struct btf_verifier_env *env,
 			!btf_type_is_struct(next_type);
 	default:
 		BUG_ON(1);
+=======
+>>>>>>> 13434e50bd20 (UPSTREAM: bpf: btf: avoid -Wreturn-type warning)
 	}
 }
 
@@ -2603,11 +2606,8 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 			      u32 btf_data_size)
 {
 	struct btf_sec_info secs[ARRAY_SIZE(btf_sec_info_offset)];
-<<<<<<< HEAD
 	const unsigned int nr_secs = ARRAY_SIZE(btf_sec_info_offset);
 	struct btf_sec_info secs[nr_secs];
-=======
->>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 	u32 total, expected_total, i;
 	const struct btf_header *hdr;
 	const struct btf *btf;
@@ -2617,15 +2617,12 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 
 	/* Populate the secs from hdr */
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++)
-<<<<<<< HEAD
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
 	sort(secs, ARRAY_SIZE(btf_sec_info_offset),
 	     sizeof(struct btf_sec_info), btf_sec_info_cmp, NULL);
 	for (i = 0; i < nr_secs; i++)
-=======
->>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 		secs[i] = *(struct btf_sec_info *)((void *)hdr +
 						   btf_sec_info_offset[i]);
 
@@ -2636,10 +2633,7 @@ static int btf_check_sec_info(struct btf_verifier_env *env,
 	total = 0;
 	expected_total = btf_data_size - hdr->hdr_len;
 	for (i = 0; i < ARRAY_SIZE(btf_sec_info_offset); i++) {
-<<<<<<< HEAD
 	for (i = 0; i < nr_secs; i++) {
-=======
->>>>>>> 2bc5ec1e0866 (UPSTREAM: bpf: btf: Avoid variable length array)
 		if (expected_total < secs[i].off) {
 			btf_verifier_log(env, "Invalid section offset");
 			return -EINVAL;
