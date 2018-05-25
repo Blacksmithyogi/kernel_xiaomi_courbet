@@ -518,6 +518,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 	};
 	struct sockaddr_storage unspec;
 	};
+	struct sockaddr_storage unspec;
 	struct cgroup *cgrp;
 	int ret;
 
