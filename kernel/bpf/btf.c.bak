@@ -833,7 +833,6 @@ static bool env_type_is_resolve_sink(const struct btf_verifier_env *env,
 			!btf_type_is_struct(next_type);
 	default:
 		BUG();
-<<<<<<< HEAD
 	}
 }
 
@@ -1023,8 +1022,6 @@ static bool env_type_is_resolve_sink(const struct btf_verifier_env *env,
 			!btf_type_is_struct(next_type);
 	default:
 		BUG_ON(1);
-=======
->>>>>>> 13434e50bd20 (UPSTREAM: bpf: btf: avoid -Wreturn-type warning)
 	}
 }
 
@@ -1771,6 +1768,7 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
+<<<<<<< HEAD
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
 	 */
@@ -1786,6 +1784,8 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	 */
 	/* Array elem cannot be in type void,
 	 * so !array->type is not allowed.
+=======
+>>>>>>> 1e219ba673cd (BACKPORT: bpf: btf: Check array t->size)
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
 	 */
