@@ -1667,6 +1667,7 @@ static s32 btf_fwd_check_meta(struct btf_verifier_env *env,
 	return 0;
 }
 
+<<<<<<< HEAD
 static struct btf_kind_operations fwd_ops = {
 	.check_meta = btf_fwd_check_meta,
 	.resolve = btf_df_resolve,
@@ -1707,8 +1708,10 @@ static int btf_array_check_member(struct btf_verifier_env *env,
 	.log_details = btf_ref_type_log,
 };
 
+=======
+>>>>>>> 1c51ec5fb608 (BACKPORT: bpf: btf: Ensure t->type == 0 for BTF_KIND_FWD)
 static struct btf_kind_operations fwd_ops = {
-	.check_meta = btf_ref_type_check_meta,
+	.check_meta = btf_fwd_check_meta,
 	.resolve = btf_df_resolve,
 	.check_member = btf_df_check_member,
 	.log_details = btf_ref_type_log,
@@ -1768,7 +1771,6 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 		return -EINVAL;
 	}
 
-<<<<<<< HEAD
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
 	 */
@@ -1784,8 +1786,6 @@ static s32 btf_array_check_meta(struct btf_verifier_env *env,
 	 */
 	/* Array elem cannot be in type void,
 	 * so !array->type is not allowed.
-=======
->>>>>>> 1e219ba673cd (BACKPORT: bpf: btf: Check array t->size)
 	/* Array elem type and index type cannot be in type void,
 	 * so !array->type and !array->index_type are not allowed.
 	 */

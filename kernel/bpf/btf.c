@@ -1708,7 +1708,7 @@ static int btf_array_check_member(struct btf_verifier_env *env,
 };
 
 static struct btf_kind_operations fwd_ops = {
-	.check_meta = btf_ref_type_check_meta,
+	.check_meta = btf_fwd_check_meta,
 	.resolve = btf_df_resolve,
 	.check_member = btf_df_check_member,
 	.log_details = btf_ref_type_log,
