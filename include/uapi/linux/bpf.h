@@ -2287,7 +2287,7 @@ union bpf_attr {
  * 		A non-negative value equal to or less than *size* on success,
  * 		or a negative error in case of failure.
  *
- * int skb_load_bytes_relative(const struct sk_buff *skb, u32 offset, void *to, u32 len, u32 start_header)
+ * int bpf_skb_load_bytes_relative(const struct sk_buff *skb, u32 offset, void *to, u32 len, u32 start_header)
  * 	Description
  * 		This helper is similar to **bpf_skb_load_bytes**\ () in that
  * 		it provides an easy way to load *len* bytes from *offset*
@@ -2338,7 +2338,7 @@ union bpf_attr {
  *		* < 0 if any input argument is invalid
  *		*   0 on success (packet is forwarded, nexthop neighbor exists)
  *		* > 0 one of **BPF_FIB_LKUP_RET_** codes explaining why the
- *		*     packet is not forwarded or needs assist from full stack
+ *		  packet is not forwarded or needs assist from full stack
  *
  * int bpf_sock_hash_update(struct bpf_sock_ops_kern *skops, struct bpf_map *map, void *key, u64 flags)
  *	Description
@@ -2494,7 +2494,6 @@ union bpf_attr {
  *		This helper is only available is the kernel was compiled with
  *		the **CONFIG_BPF_LIRC_MODE2** configuration option set to
  *		"**y**".
- *
  *	Return
  *		0
  *
@@ -2514,7 +2513,6 @@ union bpf_attr {
  *		This helper is only available is the kernel was compiled with
  *		the **CONFIG_BPF_LIRC_MODE2** configuration option set to
  *		"**y**".
- *
  *	Return
  *		0
  *
