@@ -1284,6 +1284,10 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	u16 nr_copy_bits;
 	u64 print_num;
 
+	/*
+	 * bits_offset is at most 7.
+	 * BTF_INT_OFFSET() cannot exceed 64 bits.
+	 */
 	total_bits_offset = bits_offset + BTF_INT_OFFSET(int_data);
 	data += BITS_ROUNDDOWN_BYTES(total_bits_offset);
 	bits_offset = BITS_PER_BYTE_MASKED(total_bits_offset);
