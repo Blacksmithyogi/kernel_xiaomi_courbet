@@ -2015,7 +2015,6 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 	u32 struct_size = t->size;
 	struct btf *btf = env->btf;
 	u32 struct_size = t->size;
-	u32 meta_needed;
 	u16 i;
 
 	meta_needed = btf_type_vlen(t) * sizeof(*member);

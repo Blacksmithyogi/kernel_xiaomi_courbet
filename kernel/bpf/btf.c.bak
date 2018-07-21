@@ -517,10 +517,7 @@ static const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id)
 static bool btf_type_int_is_regular(const struct btf_type *t)
 {
 	u8 nr_bits, nr_bytes;
-<<<<<<< HEAD
 	u16 nr_bits, nr_bytes;
-=======
->>>>>>> 2b5ff0766f5d (UPSTREAM: bpf: btf: Clean up BTF_INT_BITS() in uapi btf.h)
 	u32 int_data;
 
 	int_data = btf_type_int(t);
@@ -1274,7 +1271,6 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	u8 total_bits_offset;
 	u8 nr_copy_bytes;
 	u8 nr_copy_bits;
-<<<<<<< HEAD
 	u64 print_num;
 
 	/*
@@ -1286,8 +1282,6 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	u16 total_bits_offset;
 	u16 nr_copy_bytes;
 	u16 nr_copy_bits;
-=======
->>>>>>> 2b5ff0766f5d (UPSTREAM: bpf: btf: Clean up BTF_INT_BITS() in uapi btf.h)
 	u64 print_num;
 
 	/*
@@ -1338,10 +1332,7 @@ static void btf_int_seq_show(const struct btf *btf, const struct btf_type *t,
 	u8 encoding = BTF_INT_ENCODING(int_data);
 	bool sign = encoding & BTF_INT_SIGNED;
 	u8 nr_bits = BTF_INT_BITS(int_data);
-<<<<<<< HEAD
 	u32 nr_bits = BTF_INT_BITS(int_data);
-=======
->>>>>>> 2b5ff0766f5d (UPSTREAM: bpf: btf: Clean up BTF_INT_BITS() in uapi btf.h)
 
 	if (bits_offset || BTF_INT_OFFSET(int_data) ||
 	    BITS_PER_BYTE_MASKED(nr_bits)) {
@@ -2020,11 +2011,13 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 	bool is_union = BTF_INFO_KIND(t->info) == BTF_KIND_UNION;
 	const struct btf_member *member;
 	u32 meta_needed, last_offset;
+<<<<<<< HEAD
 	struct btf *btf = env->btf;
 	u32 struct_size = t->size;
+=======
+>>>>>>> 1ee5e32f39b4 (BACKPORT: bpf: btf: Ensure the member->offset is in the right order)
 	struct btf *btf = env->btf;
 	u32 struct_size = t->size;
-	u32 meta_needed;
 	u16 i;
 
 	meta_needed = btf_type_vlen(t) * sizeof(*member);
@@ -2038,11 +2031,14 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 	btf_verifier_log_type(env, t, NULL);
 
 	last_offset = 0;
+<<<<<<< HEAD
 	for_each_member(i, t, member) {
 		if (!btf_name_offset_valid(btf, member->name_off)) {
 			btf_verifier_log_member(env, t, member,
 						"Invalid member name_offset:%u",
 						member->name_off);
+=======
+>>>>>>> 1ee5e32f39b4 (BACKPORT: bpf: btf: Ensure the member->offset is in the right order)
 	for_each_member(i, t, member) {
 		if (!btf_name_offset_valid(btf, member->name_off)) {
 			btf_verifier_log_member(env, t, member,
