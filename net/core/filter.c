@@ -1720,7 +1720,7 @@ BPF_CALL_5(bpf_skb_load_bytes_relative, const struct sk_buff *, skb,
 	if (unlikely(offset > 0xffff || len > (end - mac)))
 	u8 *ptr;
 
-	if (unlikely(offset > 0xffff || len > skb_headlen(skb)))
+	if (unlikely(offset > 0xffff || len > (end - mac)))
 		goto err_clear;
 
 	switch (start_header) {
@@ -1732,7 +1732,7 @@ BPF_CALL_5(bpf_skb_load_bytes_relative, const struct sk_buff *, skb,
 		ptr = skb_mac_header(skb) + offset;
 		break;
 	case BPF_HDR_START_NET:
-		ptr = skb_network_header(skb) + offset;
+		ptr = net + offset;
 		break;
 	default:
 		goto err_clear;
