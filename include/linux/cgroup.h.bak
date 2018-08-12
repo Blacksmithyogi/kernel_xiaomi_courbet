@@ -579,11 +579,13 @@ static inline bool cgroup_is_descendant(struct cgroup *cgrp,
 static inline struct cgroup *cgroup_ancestor(struct cgroup *cgrp,
 					     int ancestor_level)
 {
+<<<<<<< HEAD
 	if (cgrp->level < ancestor_level)
 		return NULL;
 	while (cgrp && cgrp->level > ancestor_level)
 		cgrp = cgroup_parent(cgrp);
 	return cgrp;
+=======
 	struct cgroup *ptr;
 
 	if (cgrp->level < ancestor_level)
@@ -598,6 +600,7 @@ static inline struct cgroup *cgroup_ancestor(struct cgroup *cgrp,
 		return ptr;
 
 	return NULL;
+>>>>>>> e45fabb32076 (BACKPORT: bpf: Introduce bpf_skb_ancestor_cgroup_id helper)
 }
 
 /**
