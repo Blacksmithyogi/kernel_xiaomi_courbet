@@ -2011,11 +2011,8 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 	bool is_union = BTF_INFO_KIND(t->info) == BTF_KIND_UNION;
 	const struct btf_member *member;
 	u32 meta_needed, last_offset;
-<<<<<<< HEAD
 	struct btf *btf = env->btf;
 	u32 struct_size = t->size;
-=======
->>>>>>> 1ee5e32f39b4 (BACKPORT: bpf: btf: Ensure the member->offset is in the right order)
 	struct btf *btf = env->btf;
 	u32 struct_size = t->size;
 	u16 i;
@@ -2031,14 +2028,11 @@ static s32 btf_struct_check_meta(struct btf_verifier_env *env,
 	btf_verifier_log_type(env, t, NULL);
 
 	last_offset = 0;
-<<<<<<< HEAD
 	for_each_member(i, t, member) {
 		if (!btf_name_offset_valid(btf, member->name_off)) {
 			btf_verifier_log_member(env, t, member,
 						"Invalid member name_offset:%u",
 						member->name_off);
-=======
->>>>>>> 1ee5e32f39b4 (BACKPORT: bpf: btf: Ensure the member->offset is in the right order)
 	for_each_member(i, t, member) {
 		if (!btf_name_offset_valid(btf, member->name_off)) {
 			btf_verifier_log_member(env, t, member,
@@ -2401,9 +2395,12 @@ static int btf_check_all_metas(struct btf_verifier_env *env)
 	hdr = &btf->hdr;
 	cur = btf->nohdr_data + hdr->type_off;
 	end = cur + hdr->type_len;
+<<<<<<< HEAD
 	hdr = btf->hdr;
 	cur = btf->nohdr_data + hdr->type_off;
 	end = btf->nohdr_data + hdr->type_len;
+=======
+>>>>>>> 9971663b4bb1 (UPSTREAM: bpf: btf: Fix end boundary calculation for type section)
 
 
 	env->log_type_id = 1;
