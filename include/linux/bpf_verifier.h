@@ -238,6 +238,7 @@ struct bpf_ext_analyzer_ops {
 
 struct bpf_subprog_info {
 	u32 start; /* insn idx of function entry point */
+	u32 linfo_idx; /* The idx to the main_prog->aux->linfo */
 	u16 stack_depth; /* max. stack depth used by this function */
 };
 
