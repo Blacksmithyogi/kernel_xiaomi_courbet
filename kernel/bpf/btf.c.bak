@@ -651,12 +651,9 @@ __printf(4, 5) static void __btf_verifier_log_type(struct btf_verifier_env *env,
 	__btf_verifier_log(log, "[%u] %s %s%s",
 			   env->log_type_id,
 			   btf_kind_str[kind],
-<<<<<<< HEAD
 			   btf_name_by_offset(btf, t->name_off),
 			   btf_name_by_offset(btf, t->name),
-=======
 			   __btf_name_by_offset(btf, t->name_off),
->>>>>>> af6be91ff39b (UPSTREAM: bpf: Create a new btf_name_by_offset() for non type name use case)
 			   log_details ? " " : "");
 
 	if (log_details)
@@ -700,13 +697,10 @@ static void btf_verifier_log_member(struct btf_verifier_env *env,
 		btf_verifier_log_type(env, struct_type, NULL);
 
 	__btf_verifier_log(log, "\t%s type_id=%u bits_offset=%u",
-<<<<<<< HEAD
 			   btf_name_by_offset(btf, member->name_off),
 	__btf_verifier_log(log, "\t%s type_id=%u bits_offset=%u",
 			   btf_name_by_offset(btf, member->name),
-=======
 			   __btf_name_by_offset(btf, member->name_off),
->>>>>>> af6be91ff39b (UPSTREAM: bpf: Create a new btf_name_by_offset() for non type name use case)
 			   member->type, member->offset);
 
 	if (fmt && *fmt) {
@@ -1350,19 +1344,15 @@ static void btf_int_log(struct btf_verifier_env *env,
 			 btf_int_encoding_str(BTF_INT_ENCODING(int_data)));
 }
 
-static void btf_int_bits_seq_show(const struct btf *btf,
-				  const struct btf_type *t,
-				  void *data, u8 bits_offset,
-				  struct seq_file *m)
+static void btf_bitfield_seq_show(void *data, u8 bits_offset,
+				  u8 nr_bits, struct seq_file *m)
 {
 	u16 left_shift_bits, right_shift_bits;
-	u32 int_data = btf_type_int(t);
-	u8 nr_bits = BTF_INT_BITS(int_data);
-	u8 total_bits_offset;
 	u8 nr_copy_bytes;
 	u8 nr_copy_bits;
 	u64 print_num;
 
+<<<<<<< HEAD
 	/*
 	 * bits_offset is at most 7.
 	 * BTF_INT_OFFSET() cannot exceed 64 bits.
@@ -1381,6 +1371,10 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	total_bits_offset = bits_offset + BTF_INT_OFFSET(int_data);
 	data += BITS_ROUNDDOWN_BYTES(total_bits_offset);
 	bits_offset = BITS_PER_BYTE_MASKED(total_bits_offset);
+=======
+	data += BITS_ROUNDDOWN_BYTES(bits_offset);
+	bits_offset = BITS_PER_BYTE_MASKED(bits_offset);
+>>>>>>> b129bf61d9ba (UPSTREAM: bpf: btf: refactor btf_int_bits_seq_show())
 	nr_copy_bits = nr_bits + bits_offset;
 	nr_copy_bytes = BITS_ROUNDUP_BYTES(nr_copy_bits);
 
@@ -1412,6 +1406,23 @@ static void btf_int_bits_seq_show(const struct btf *btf,
 	print_num >>= right_shift_bits;
 
 	seq_printf(m, "0x%llx", print_num);
+}
+
+static void btf_int_bits_seq_show(const struct btf *btf,
+				  const struct btf_type *t,
+				  void *data, u8 bits_offset,
+				  struct seq_file *m)
+{
+	u32 int_data = btf_type_int(t);
+	u8 nr_bits = BTF_INT_BITS(int_data);
+	u8 total_bits_offset;
+
+	/*
+	 * bits_offset is at most 7.
+	 * BTF_INT_OFFSET() cannot exceed 64 bits.
+	 */
+	total_bits_offset = bits_offset + BTF_INT_OFFSET(int_data);
+	btf_bitfield_seq_show(data, total_bits_offset, nr_bits, m);
 }
 
 static void btf_int_seq_show(const struct btf *btf, const struct btf_type *t,
@@ -2427,12 +2438,9 @@ static s32 btf_enum_check_meta(struct btf_verifier_env *env,
 
 
 		btf_verifier_log(env, "\t%s val=%d\n",
-<<<<<<< HEAD
 				 btf_name_by_offset(btf, enums[i].name_off),
 				 btf_name_by_offset(btf, enums[i].name),
-=======
 				 __btf_name_by_offset(btf, enums[i].name_off),
->>>>>>> af6be91ff39b (UPSTREAM: bpf: Create a new btf_name_by_offset() for non type name use case)
 				 enums[i].val);
 	}
 
@@ -2456,13 +2464,10 @@ static void btf_enum_seq_show(const struct btf *btf, const struct btf_type *t,
 	for (i = 0; i < nr_enums; i++) {
 		if (v == enums[i].val) {
 			seq_printf(m, "%s",
-<<<<<<< HEAD
 				   btf_name_by_offset(btf, enums[i].name_off));
 				   btf_name_by_offset(btf, enums[i].name));
-=======
 				   __btf_name_by_offset(btf,
 							enums[i].name_off));
->>>>>>> af6be91ff39b (UPSTREAM: bpf: Create a new btf_name_by_offset() for non type name use case)
 			return;
 		}
 	}
