@@ -686,7 +686,7 @@ static void *__bpf_copy_key(void __user *ukey, u64 key_size)
 }
 
 /* last field in 'union bpf_attr' used by this command */
-#define BPF_MAP_LOOKUP_ELEM_LAST_FIELD value
+#define BPF_MAP_LOOKUP_ELEM_LAST_FIELD flags
 
 static int map_lookup_elem(union bpf_attr *attr)
 {
@@ -704,6 +704,9 @@ static int map_lookup_elem(union bpf_attr *attr)
 	if (CHECK_ATTR(BPF_MAP_LOOKUP_ELEM))
 		return -EINVAL;
 
+	if (attr->flags & ~BPF_F_LOCK)
+		return -EINVAL;
+
 	f = fdget(ufd);
 	map = __bpf_map_get(f);
 	if (IS_ERR(map))
@@ -713,6 +716,12 @@ static int map_lookup_elem(union bpf_attr *attr)
 		err = -EPERM;
 		goto err_put;
 	}
+
+        if ((attr->flags & BPF_F_LOCK) &&
+            !map_value_has_spin_lock(map)) {
+                err = -EINVAL;
+                goto err_put;
+        }
 
 	if (map->key_size <= sizeof(key_onstack)) {
 		key = key_onstack;
@@ -785,7 +794,13 @@ static int map_lookup_elem(union bpf_attr *attr)
 			err = -ENOENT;
 		} else {
 			err = 0;
-			copy_map_value(map, value, ptr);
+			if (attr->flags & BPF_F_LOCK)
+				/* lock 'ptr' and copy everything but lock */
+				copy_map_value_locked(map, value, ptr, true);
+			else
+				copy_map_value(map, value, ptr);
+			/* mask lock, since value wasn't zero inited */
+			check_and_init_map_lock(map, value);
 		}
 		rcu_read_unlock();
 	}
@@ -851,6 +866,12 @@ static int map_update_elem(union bpf_attr *attr)
 		err = -EPERM;
 		goto err_put;
 	}
+
+        if ((attr->flags & BPF_F_LOCK) &&
+            !map_value_has_spin_lock(map)) {
+                err = -EINVAL;
+                goto err_put;
+        }
 
 	if (map->key_size <= sizeof(key_onstack)) {
 		key = key_onstack;
