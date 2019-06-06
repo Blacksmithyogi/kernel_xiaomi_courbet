@@ -93,10 +93,7 @@ int __cgroup_bpf_run_filter_sock_addr(struct sock *sk,
 				      struct sockaddr *uaddr,
 				      enum bpf_attach_type type,
 				      void *t_ctx);
-<<<<<<< HEAD
 				      enum bpf_attach_type type);
-=======
->>>>>>> 73d3db3ad4d8 (UPSTREAM: bpf: Hooks for sys_sendmsg)
 
 int __cgroup_bpf_run_filter_sock_ops(struct sock *sk,
 				     struct bpf_sock_ops_kern *sock_ops,
@@ -174,7 +171,6 @@ void bpf_cgroup_storage_release(struct bpf_prog *prog, struct bpf_map *map);
 	if (cgroup_bpf_enabled)						       \
 		__ret = __cgroup_bpf_run_filter_sock_addr(sk, uaddr, type,     \
 							  NULL);	       \
-<<<<<<< HEAD
 	__ret;								       \
 })
 
@@ -188,8 +184,6 @@ void bpf_cgroup_storage_release(struct bpf_prog *prog, struct bpf_map *map);
 		release_sock(sk);					       \
 	}								       \
 		__ret = __cgroup_bpf_run_filter_sock_addr(sk, uaddr, type);    \
-=======
->>>>>>> 73d3db3ad4d8 (UPSTREAM: bpf: Hooks for sys_sendmsg)
 	__ret;								       \
 })
 
@@ -222,7 +216,6 @@ void bpf_cgroup_storage_release(struct bpf_prog *prog, struct bpf_map *map);
 
 #define BPF_CGROUP_RUN_PROG_INET4_CONNECT_LOCK(sk, uaddr)		       \
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_INET4_CONNECT, NULL)
-<<<<<<< HEAD
 
 #define BPF_CGROUP_RUN_PROG_INET6_CONNECT_LOCK(sk, uaddr)		       \
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_INET6_CONNECT, NULL)
@@ -239,8 +232,6 @@ void bpf_cgroup_storage_release(struct bpf_prog *prog, struct bpf_map *map);
 #define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr)			\
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_UDP6_RECVMSG, NULL)
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_INET4_CONNECT)
-=======
->>>>>>> 73d3db3ad4d8 (UPSTREAM: bpf: Hooks for sys_sendmsg)
 
 #define BPF_CGROUP_RUN_PROG_INET6_CONNECT_LOCK(sk, uaddr)		       \
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_INET6_CONNECT, NULL)
@@ -250,6 +241,12 @@ void bpf_cgroup_storage_release(struct bpf_prog *prog, struct bpf_map *map);
 
 #define BPF_CGROUP_RUN_PROG_UDP6_SENDMSG_LOCK(sk, uaddr, t_ctx)		       \
 	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_UDP6_SENDMSG, t_ctx)
+
+#define BPF_CGROUP_RUN_PROG_UDP4_RECVMSG_LOCK(sk, uaddr)			\
+	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_UDP4_RECVMSG, NULL)
+
+#define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr)			\
+	BPF_CGROUP_RUN_SA_PROG_LOCK(sk, uaddr, BPF_CGROUP_UDP6_RECVMSG, NULL)
 
 #define BPF_CGROUP_RUN_PROG_SOCK_OPS(sock_ops)				       \
 ({									       \
@@ -331,11 +328,10 @@ static inline void bpf_cgroup_storage_free(
 #define BPF_CGROUP_RUN_PROG_INET6_CONNECT_LOCK(sk, uaddr) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_UDP4_SENDMSG_LOCK(sk, uaddr, t_ctx) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_UDP6_SENDMSG_LOCK(sk, uaddr, t_ctx) ({ 0; })
-<<<<<<< HEAD
 #define BPF_CGROUP_RUN_PROG_UDP4_RECVMSG_LOCK(sk, uaddr) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr) ({ 0; })
-=======
->>>>>>> 73d3db3ad4d8 (UPSTREAM: bpf: Hooks for sys_sendmsg)
+#define BPF_CGROUP_RUN_PROG_UDP4_RECVMSG_LOCK(sk, uaddr) ({ 0; })
+#define BPF_CGROUP_RUN_PROG_UDP6_RECVMSG_LOCK(sk, uaddr) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_SOCK_OPS(sock_ops) ({ 0; })
 #define BPF_CGROUP_RUN_PROG_DEVICE_CGROUP(type,major,minor,access) ({ 0; })
 

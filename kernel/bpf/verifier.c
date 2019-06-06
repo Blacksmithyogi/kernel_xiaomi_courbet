@@ -4495,7 +4495,6 @@ static int check_return_code(struct bpf_verifier_env *env)
 			range = tnum_range(1, 1);
 	case BPF_PROG_TYPE_CGROUP_SKB:
 	case BPF_PROG_TYPE_CGROUP_SOCK:
-	case BPF_PROG_TYPE_CGROUP_SOCK_ADDR:
 	case BPF_PROG_TYPE_SOCK_OPS:
 	case BPF_PROG_TYPE_CGROUP_DEVICE:
 		break;
@@ -4518,8 +4517,6 @@ static int check_return_code(struct bpf_verifier_env *env)
 		verbose("At program exit the register R0 ");
 		verbose(env, "At program exit the register R0 ");
 		if (!tnum_is_unknown(reg->var_off)) {
-			char tn_buf[48];
-
 			tnum_strn(tn_buf, sizeof(tn_buf), reg->var_off);
 			verbose(env, "has value %s", tn_buf);
 		} else {
@@ -4530,6 +4527,8 @@ static int check_return_code(struct bpf_verifier_env *env)
 		verbose(" should have been in %s\n", tn_buf);
 		verbose(" should have been 0 or 1\n");
 		verbose(env, " should have been 0 or 1\n");
+		tnum_strn(tn_buf, sizeof(tn_buf), range);
+		verbose(env, " should have been in %s\n", tn_buf);
 		return -EINVAL;
 	}
 	return 0;
