@@ -1,13 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2011-2014 PLUMgrid, http://plumgrid.com
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of version 2 of the GNU General Public
- * License as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
  */
 #include <linux/bpf.h>
 #include <linux/bpf_trace.h>
@@ -206,11 +198,16 @@ static void bpf_uncharge_memlock(struct user_struct *user, u32 pages)
 		atomic_long_sub(pages, &user->locked_vm);
 }
 
-int bpf_map_charge_init(struct bpf_map_memory *mem, u32 pages)
+int bpf_map_charge_init(struct bpf_map_memory *mem, size_t size)
 {
-	struct user_struct *user = get_current_user();
+	u32 pages = round_up(size, PAGE_SIZE) >> PAGE_SHIFT;
+	struct user_struct *user;
 	int ret;
 
+	if (size >= U32_MAX - PAGE_SIZE)
+		return -E2BIG;
+
+	user = get_current_user();
 	ret = bpf_charge_memlock(user, pages);
 	if (ret) {
 		free_uid(user);
@@ -579,11 +576,8 @@ static int map_create(union bpf_attr *attr)
 
 	err = bpf_obj_name_cpy(map->name, attr->map_name);
 	if (err)
-<<<<<<< HEAD
 		goto free_map_nouncharge;
-=======
 		goto free_map;
->>>>>>> 1f56eab46af0 (UPSTREAM: bpf: rework memlock-based memory accounting for maps)
 
 	atomic_set(&map->refcnt, 1);
 	atomic_set(&map->usercnt, 1);
@@ -1837,7 +1831,11 @@ static int bpf_prog_load(union bpf_attr *attr, union bpf_attr __user *uattr)
 	if (err < 0)
 		goto free_prog;
 
+<<<<<<< HEAD
 	prog->aux->load_time = ktime_get_boot_ns();
+=======
+	prog->aux->load_time = ktime_get_boottime_ns();
+>>>>>>> 331c458c0d6e (BACKPORT: timekeeping: Use proper clock specifier names in functions)
 	err = bpf_obj_name_cpy(prog->aux->name, attr->prog_name);
 	if (err)
 		goto free_prog;
