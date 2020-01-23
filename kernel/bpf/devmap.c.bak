@@ -103,21 +103,18 @@ static struct hlist_head *dev_map_create_hash(unsigned int entries)
 	return hash;
 }
 
-<<<<<<< HEAD
 static u64 dev_map_bitmap_size(const union bpf_attr *attr)
 {
 	return BITS_TO_LONGS((u64) attr->max_entries) * sizeof(unsigned long);
 }
 
 static struct bpf_map *dev_map_alloc(union bpf_attr *attr)
-=======
 static inline struct hlist_head *dev_map_index_hash(struct bpf_dtab *dtab,
 						    int idx)
 {
 	return &dtab->dev_index_head[idx & (dtab->n_buckets - 1)];
 }
 
->>>>>>> 91964d281a67 (UPSTREAM: xdp: Fix cleanup on map free for devmap_hash map type)
 static int dev_map_init_map(struct bpf_dtab *dtab, union bpf_attr *attr)
 {
 	int err, cpu;
@@ -324,7 +321,6 @@ static int dev_map_get_next_key(struct bpf_map *map, void *key, void *next_key)
 	return 0;
 }
 
-<<<<<<< HEAD
 static inline struct hlist_head *dev_map_index_hash(struct bpf_dtab *dtab,
 						    int idx)
 {
@@ -332,16 +328,19 @@ static inline struct hlist_head *dev_map_index_hash(struct bpf_dtab *dtab,
 }
 
 static struct bpf_dtab_netdev *__dev_map_hash_lookup_elem_dtab(struct bpf_map *map, u32 key)
-=======
->>>>>>> 91964d281a67 (UPSTREAM: xdp: Fix cleanup on map free for devmap_hash map type)
 struct bpf_dtab_netdev *__dev_map_hash_lookup_elem(struct bpf_map *map, u32 key)
 {
 	struct bpf_dtab *dtab = container_of(map, struct bpf_dtab, map);
 	struct hlist_head *head = dev_map_index_hash(dtab, key);
 	struct bpf_dtab_netdev *dev;
 
+<<<<<<< HEAD
 	hlist_for_each_entry_rcu(dev, head, index_hlist)
 		if (dev->bit == key)
+=======
+	hlist_for_each_entry_rcu(dev, head, index_hlist,
+				 lockdep_is_held(&dtab->index_lock))
+>>>>>>> 0f9395583728 (UPSTREAM: bpf, devmap: Pass lockdep expression to RCU lists)
 		if (dev->idx == key)
 			return dev;
 

@@ -336,6 +336,8 @@ struct bpf_dtab_netdev *__dev_map_hash_lookup_elem(struct bpf_map *map, u32 key)
 
 	hlist_for_each_entry_rcu(dev, head, index_hlist)
 		if (dev->bit == key)
+	hlist_for_each_entry_rcu(dev, head, index_hlist,
+				 lockdep_is_held(&dtab->index_lock))
 		if (dev->idx == key)
 			return dev;
 
