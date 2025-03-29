@@ -67,8 +67,11 @@
  */
 #if defined(CONFIG_LD_DEAD_CODE_DATA_ELIMINATION) || defined(CONFIG_LTO_CLANG)
 #define TEXT_MAIN .text .text.[0-9a-zA-Z_]*
+<<<<<<< HEAD
 #define TEXT_CFI_MAIN .text.cfi .text.[0-9a-zA-Z_]*.cfi
+=======
 #define TEXT_CFI_MAIN .text.[0-9a-zA-Z_]*.cfi
+>>>>>>> cc0e8a777ed1 (ANDROID: Update CFI patchset from android11-5.4)
 #define DATA_MAIN .data .data.[0-9a-zA-Z_]* .data..compoundliteral* .data..L*
 #define BSS_MAIN .bss .bss.[0-9a-zA-Z_]* .bss..compoundliteral* .bss..L*
 #else
