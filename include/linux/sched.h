@@ -47,7 +47,6 @@ struct rcu_node;
 struct reclaim_state;
 struct robust_list_head;
 struct sched_attr;
-struct sched_param;
 struct seq_file;
 struct sighand_struct;
 struct signal_struct;
@@ -326,6 +325,10 @@ struct vtime {
 	u64			utime;
 	u64			stime;
 	u64			gtime;
+};
+
+struct sched_param {
+	int sched_priority;
 };
 
 struct sched_info {
@@ -1598,7 +1601,7 @@ extern struct pid *cad_pid;
 #define PF_RANDOMIZE		0x00400000	/* Randomize virtual address space */
 #define PF_SWAPWRITE		0x00800000	/* Allowed to write to swap */
 #define PF_MEMSTALL		0x01000000	/* Stalled due to lack of memory */
-#define PF_PERF_CRITICAL	0x02000000	/* Thread is performance-critical */
+#define PF_UMH			0x02000000	/* I'm an Usermodehelper process */
 #define PF_NO_SETAFFINITY	0x04000000	/* Userland is not allowed to meddle with cpus_allowed */
 #define PF_MCE_EARLY		0x08000000      /* Early kill for mce process policy */
 #define PF_WAKE_UP_IDLE         0x10000000	/* TTWU on an idle CPU */
@@ -1752,7 +1755,11 @@ extern int task_curr(const struct task_struct *p);
 extern int idle_cpu(int cpu);
 extern int sched_setscheduler(struct task_struct *, int, const struct sched_param *);
 extern int sched_setscheduler_nocheck(struct task_struct *, int, const struct sched_param *);
+extern int sched_set_fifo(struct task_struct *p);
+extern int sched_set_fifo_low(struct task_struct *p);
+extern int sched_set_normal(struct task_struct *p, int nice);
 extern int sched_setattr(struct task_struct *, const struct sched_attr *);
+extern int sched_setattr_nocheck(struct task_struct *, const struct sched_attr *);
 extern struct task_struct *idle_task(int cpu);
 
 /**
@@ -1994,32 +2001,12 @@ extern long sched_getaffinity(pid_t pid, struct cpumask *mask);
 #define TASK_SIZE_OF(tsk)	TASK_SIZE
 #endif
 
-static inline u32 sched_get_wake_up_idle(struct task_struct *p)
+void __exit_umh(struct task_struct *tsk);
+
+static inline void exit_umh(struct task_struct *tsk)
 {
-	u32 enabled = p->flags & PF_WAKE_UP_IDLE;
-
-	return !!enabled;
-}
-
-static inline int sched_set_wake_up_idle(struct task_struct *p,
-						int wake_up_idle)
-{
-	int enable = !!wake_up_idle;
-
-	if (enable)
-		p->flags |= PF_WAKE_UP_IDLE;
-	else
-		p->flags &= ~PF_WAKE_UP_IDLE;
-
-	return 0;
-}
-
-static inline void set_wake_up_idle(bool enabled)
-{
-	if (enabled)
-		current->flags |= PF_WAKE_UP_IDLE;
-	else
-		current->flags &= ~PF_WAKE_UP_IDLE;
+	if (unlikely(tsk->flags & PF_UMH))
+		__exit_umh(tsk);
 }
 
 #endif

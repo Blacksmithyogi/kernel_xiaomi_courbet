@@ -196,7 +196,7 @@ int inet_listen(struct socket *sock, int backlog)
 {
 	struct sock *sk = sock->sk;
 	unsigned char old_state;
-	int err;
+	int err, tcp_fastopen;
 
 	lock_sock(sk);
 
@@ -218,16 +218,18 @@ int inet_listen(struct socket *sock, int backlog)
 		 * because the socket was in TCP_LISTEN state previously but
 		 * was shutdown() rather than close().
 		 */
-		if ((sysctl_tcp_fastopen & TFO_SERVER_WO_SOCKOPT1) &&
-		    (sysctl_tcp_fastopen & TFO_SERVER_ENABLE) &&
+		tcp_fastopen = sock_net(sk)->ipv4.sysctl_tcp_fastopen;
+		if ((tcp_fastopen & TFO_SERVER_WO_SOCKOPT1) &&
+		    (tcp_fastopen & TFO_SERVER_ENABLE) &&
 		    !inet_csk(sk)->icsk_accept_queue.fastopenq.max_qlen) {
 			fastopen_queue_tune(sk, backlog);
-			tcp_fastopen_init_key_once(true);
+			tcp_fastopen_init_key_once(sock_net(sk));
 		}
 
 		err = inet_csk_listen_start(sk, backlog);
 		if (err)
 			goto out;
+		tcp_call_bpf(sk, BPF_SOCK_OPS_TCP_LISTEN_CB, 0, NULL);
 	}
 	sk->sk_max_ack_backlog = backlog;
 	err = 0;
@@ -435,9 +437,10 @@ int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 
 	/* If the socket has its own bind function then use it. (RAW) */
 	if (sk->sk_prot->bind) {
-			}
+		return sk->sk_prot->bind(sk, uaddr, addr_len);
+	}
 	if (addr_len < sizeof(struct sockaddr_in))
-		return -EINVAL;	
+		return -EINVAL;
 
 	/* BPF prog is run before any checks are done so that if the prog
 	 * changes context in a wrong way it will be caught.

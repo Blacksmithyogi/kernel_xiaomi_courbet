@@ -2,7 +2,7 @@
 VERSION = 4
 PATCHLEVEL = 14
 SUBLEVEL = 356
-EXTRAVERSION = -openela-rc1
+EXTRAVERSION = -openela
 NAME = Petit Gorille
 
 # *DOCUMENTATION*
@@ -375,7 +375,7 @@ else
 HOSTCC	= gcc
 HOSTCXX	= g++
 endif
-HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -Wno-deprecated-declarations -O3 \
+HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
 		-fomit-frame-pointer -std=gnu89 $(HOST_LFS_CFLAGS)
 HOSTCXXFLAGS := -O3 $(HOST_LFS_CFLAGS)
 HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS)
@@ -387,31 +387,29 @@ HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
 endif
 
 # Make variables (CC, etc...)
-CPP		    = $(CC) -E
+CPP		= $(CC) -E
 ifneq ($(LLVM),)
-REAL_CC		= clang
-LD			= ld.lld
-AR			= llvm-ar
-NM			= llvm-nm
+CC		= clang
+LD		= ld.lld
+AR		= llvm-ar
+NM		= llvm-nm
 OBJCOPY		= llvm-objcopy
 OBJDUMP		= llvm-objdump
 READELF		= llvm-readelf
-OBJSIZE		= llvm-size
 STRIP		= llvm-strip
 else
-REAL_CC		= $(CROSS_COMPILE)gcc
-LD			= $(CROSS_COMPILE)ld
-LDGOLD	    = $(CROSS_COMPILE)ld.gold
-AR			= $(CROSS_COMPILE)ar
-AS			= $(CROSS_COMPILE)as
-NM			= $(CROSS_COMPILE)nm
+CC		= $(CROSS_COMPILE)gcc
+LD		= $(CROSS_COMPILE)ld
+LDGOLD		= $(CROSS_COMPILE)ld.gold
+AR		= $(CROSS_COMPILE)ar
+NM		= $(CROSS_COMPILE)nm
 OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 READELF		= $(CROSS_COMPILE)readelf
-OBJSIZE		= $(CROSS_COMPILE)size
 STRIP		= $(CROSS_COMPILE)strip
 endif
-AWK			= awk
+PAHOLE		= pahole
+AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
 DEPMOD		= depmod
@@ -474,8 +472,8 @@ LDFLAGS :=
 GCC_PLUGINS_CFLAGS :=
 CLANG_FLAGS :=
 
-export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
-export CPP AR NM STRIP OBJCOPY OBJDUMP HOSTLDFLAGS HOST_LOADLIBES
+export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE LD CC
+export CPP AR NM STRIP OBJCOPY OBJDUMP PAHOLE READELF HOSTLDFLAGS HOST_LOADLIBES
 export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
 export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
@@ -524,21 +522,35 @@ ifneq ($(KBUILD_SRC),)
 endif
 
 ifeq ($(cc-name),clang)
-ifneq ($(CROSS_COMPILE),)
-CLANG_TRIPLE	?= $(CROSS_COMPILE)
-CLANG_FLAGS	+= --target=$(notdir $(CLANG_TRIPLE:%-=%))
-ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
-$(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
-endif
+# Individual arch/{arch}/Makefiles should use -EL/-EB to set intended
+# endianness and -m32/-m64 to set word size based on Kconfigs instead of
+# relying on the target triple.
+CLANG_TARGET_FLAGS_arm		:= arm-linux-gnueabi
+CLANG_TARGET_FLAGS_arm64	:= aarch64-linux-gnu
+CLANG_TARGET_FLAGS_hexagon	:= hexagon-linux-musl
+CLANG_TARGET_FLAGS_m68k		:= m68k-linux-gnu
+CLANG_TARGET_FLAGS_mips		:= mipsel-linux-gnu
+CLANG_TARGET_FLAGS_powerpc	:= powerpc64le-linux-gnu
+CLANG_TARGET_FLAGS_riscv	:= riscv64-linux-gnu
+CLANG_TARGET_FLAGS_s390		:= s390x-linux-gnu
+CLANG_TARGET_FLAGS_x86		:= x86_64-linux-gnu
+CLANG_TARGET_FLAGS		:= $(CLANG_TARGET_FLAGS_$(SRCARCH))
+
+ifeq ($(CROSS_COMPILE),)
+ifeq ($(CLANG_TARGET_FLAGS),)
+$(error Specify CROSS_COMPILE or add '--target=' option to Makefile)
+else
+CLANG_FLAGS	+= --target=$(CLANG_TARGET_FLAGS)
+endif # CLANG_TARGET_FLAGS
+else
+CLANG_FLAGS	+= --target=$(notdir $(CROSS_COMPILE:%-=%))
+endif # CROSS_COMPILE
+
+LLVM_IAS ?= 1
+ifeq ($(LLVM_IAS),0)
+CLANG_FLAGS	+= -no-integrated-as
 GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
 CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)$(notdir $(CROSS_COMPILE))
-GCC_TOOLCHAIN	:= $(realpath $(GCC_TOOLCHAIN_DIR)/..)
-endif
-ifneq ($(GCC_TOOLCHAIN),)
-CLANG_FLAGS	+= --gcc-toolchain=$(GCC_TOOLCHAIN)
-endif
-ifneq ($(LLVM_IAS),1)
-CLANG_FLAGS	+= -no-integrated-as
 endif
 CLANG_FLAGS	+= -Werror=unknown-warning-option
 CLANG_FLAGS	+= $(call cc-option, -Wno-misleading-indentation)
@@ -1057,7 +1069,7 @@ KBUILD_AFLAGS   += $(ARCH_AFLAGS)   $(KAFLAGS)
 KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 
 # Use --build-id when available.
-LDFLAGS_BUILD_ID := $(call ld-option, --build-id)
+LDFLAGS_BUILD_ID := --build-id
 KBUILD_LDFLAGS_MODULE += $(LDFLAGS_BUILD_ID)
 LDFLAGS_vmlinux += $(LDFLAGS_BUILD_ID)
 

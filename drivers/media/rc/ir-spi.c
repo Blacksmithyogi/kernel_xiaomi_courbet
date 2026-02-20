@@ -1,19 +1,9 @@
- /*
- * Copyright (c) 2016 Samsung Electronics Co., Ltd.
- * Author: Andi Shyti <andi.shyti@samsung.it>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * SPI driven IR LED device driver
- */
-#include <linux/init.h>
-#include <linux/device.h>
-#include <linux/err.h>
-#include <linux/list.h>
-#include <linux/errno.h>
-#include <linux/compat.h>
+// SPDX-License-Identifier: GPL-2.0
+// SPI driven IR LED device driver
+//
+// Copyright (c) 2016 Samsung Electronics Co., Ltd.
+// Copyright (c) Andi Shyti <andi@etezian.org>
+
 #include <linux/delay.h>
 #include <linux/kthread.h>
 
@@ -41,16 +31,12 @@
 
 #define IR_SPI_DRIVER_NAME		"ir-spi"
 
-#define IR_SPI_DEFAULT_FREQUENCY	1920000
-#define IR_SPI_BIT_PER_WORD		    32
-#define IR_SPI_DATA_BUFFER		    150000
-
-struct ir_spi_data *ir_spi_data_g;
+#define IR_SPI_DEFAULT_FREQUENCY	38000
+#define IR_SPI_MAX_BUFSIZE		 4096
 
 struct ir_spi_data {
-	u16 nusers;
-	int power_gpio;
-	int buffer_size;
+	u32 freq;
+	bool negated;
 
 	u8 *buffer;
 
@@ -77,13 +63,18 @@ static ssize_t ir_spi_chardev_write(struct file *file,
 	if (!idata->xfer.len) {
 		idata->buffer = kmalloc(length, GFP_DMA);
 
-		if (!idata->buffer) {
-			ret = -ENOMEM;
-			goto out_unlock;
-		}
+static int ir_spi_set_duty_cycle(struct rc_dev *dev, u32 duty_cycle)
+{
+	struct ir_spi_data *idata = dev->priv;
+	int bits = (duty_cycle * 15) / 100;
 
-		idata->xfer.len = length;
-		please_free = true;
+	idata->pulse = GENMASK(bits, 0);
+
+	if (idata->negated) {
+		idata->pulse = ~idata->pulse;
+		idata->space = 0xffff;
+	} else {
+		idata->space = 0;
 	}
 
 	if (copy_from_user(idata->buffer, buffer, length)) {
@@ -291,6 +282,6 @@ static struct spi_driver ir_spi_driver = {
 
 module_spi_driver(ir_spi_driver);
 
-MODULE_AUTHOR("Andi Shyti <andi.shyti@samsung.com>");
+MODULE_AUTHOR("Andi Shyti <andi@etezian.org>");
 MODULE_DESCRIPTION("SPI IR LED");
 MODULE_LICENSE("GPL v2");

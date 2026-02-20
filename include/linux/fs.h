@@ -291,14 +291,20 @@ enum rw_hint {
 	WRITE_LIFE_EXTREME	= RWH_WRITE_LIFE_EXTREME,
 };
 
-#define IOCB_EVENTFD		(1 << 0)
-#define IOCB_APPEND		(1 << 1)
-#define IOCB_DIRECT		(1 << 2)
-#define IOCB_HIPRI		(1 << 3)
-#define IOCB_DSYNC		(1 << 4)
-#define IOCB_SYNC		(1 << 5)
-#define IOCB_WRITE		(1 << 6)
-#define IOCB_NOWAIT		(1 << 7)
+/* Match RWF_* bits to IOCB bits */
+#define IOCB_HIPRI		(__force int) RWF_HIPRI
+#define IOCB_DSYNC		(__force int) RWF_DSYNC
+#define IOCB_SYNC		(__force int) RWF_SYNC
+#define IOCB_NOWAIT		(__force int) RWF_NOWAIT
+#define IOCB_APPEND		(__force int) RWF_APPEND
+
+/* non-RWF related bits - start at 16 */
+#define IOCB_EVENTFD		(1 << 16)
+#define IOCB_DIRECT		(1 << 17)
+#define IOCB_WRITE		(1 << 18)
+/* iocb->ki_waitq is valid */
+#define IOCB_WAITQ		(1 << 19)
+#define IOCB_NOIO		(1 << 20)
 /* kiocb is a read or write operation submitted by fs/aio.c. */
 #define IOCB_AIO_RW		(1 << 23)
 
@@ -658,7 +664,10 @@ struct inode {
 #ifdef CONFIG_IMA
 	atomic_t		i_readcount; /* struct files open RO */
 #endif
-	const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
+	union {
+		const struct file_operations	*i_fop;	/* former ->i_op->default_file_ops */
+		void (*free_inode)(struct inode *);
+	};
 	struct file_lock_context	*i_flctx;
 	struct address_space	i_data;
 	struct list_head	i_devices;
@@ -1652,6 +1661,10 @@ extern struct dentry *vfs_tmpfile(struct vfsmount *mnt,
 				  struct dentry *dentry, umode_t mode,
 				  int open_flag);
 
+int vfs_mkobj(struct dentry *, umode_t,
+		int (*f)(struct dentry *, umode_t, void *),
+		void *);
+
 /*
  * VFS file helper functions.
  */
@@ -1850,6 +1863,7 @@ extern int vfs_dedupe_file_range(struct file *file,
 struct super_operations {
    	struct inode *(*alloc_inode)(struct super_block *sb);
 	void (*destroy_inode)(struct inode *);
+	void (*free_inode)(struct inode *);
 
    	void (*dirty_inode) (struct inode *, int flags);
 	int (*write_inode) (struct inode *, struct writeback_control *wbc);
@@ -2980,6 +2994,8 @@ extern int sb_min_blocksize(struct super_block *, int);
 extern int generic_file_mmap(struct file *, struct vm_area_struct *);
 extern int generic_file_readonly_mmap(struct file *, struct vm_area_struct *);
 extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
+extern ssize_t generic_file_buffered_read(struct kiocb *iocb,
+		struct iov_iter *to, ssize_t already_read);
 extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
 extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
 extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
@@ -3292,20 +3308,26 @@ static inline int iocb_flags(struct file *file)
 
 static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
 {
+	int kiocb_flags = 0;
+
+	/* make sure there's no overlap between RWF and private IOCB flags */
+	BUILD_BUG_ON((__force int)RWF_SUPPORTED & IOCB_EVENTFD);
+
+	if (!flags)
+		return 0;
 	if (unlikely(flags & ~RWF_SUPPORTED))
 		return -EOPNOTSUPP;
 
 	if (flags & RWF_NOWAIT) {
 		if (!(ki->ki_filp->f_mode & FMODE_NOWAIT))
 			return -EOPNOTSUPP;
-		ki->ki_flags |= IOCB_NOWAIT;
+		kiocb_flags |= IOCB_NOIO;
 	}
-	if (flags & RWF_HIPRI)
-		ki->ki_flags |= IOCB_HIPRI;
-	if (flags & RWF_DSYNC)
-		ki->ki_flags |= IOCB_DSYNC;
+	kiocb_flags |= (__force int)(flags & RWF_SUPPORTED);
 	if (flags & RWF_SYNC)
-		ki->ki_flags |= (IOCB_DSYNC | IOCB_SYNC);
+		kiocb_flags |= IOCB_DSYNC;
+
+	ki->ki_flags |= kiocb_flags;
 	return 0;
 }
 
