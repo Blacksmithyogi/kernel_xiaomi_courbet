@@ -187,13 +187,13 @@ int bpf_percpu_cgroup_storage_update(struct bpf_map *map, void *key,
 	__ret;								       \
 })
 
-#define BPF_CGROUP_RUN_SK_PROG(sk, type)				       \
-({									       \
-	int __ret = 0;	
-	if (cgroup_bpf_enabled) {
-		__ret = __cgroup_bpf_run_filter_sk(sk, type);		       \
-	}								       \
-	__ret;								       \
+#define BPF_CGROUP_RUN_SK_PROG(sk, type) \
+({ \
+	int __ret = 0; \
+	if (cgroup_bpf_enabled) { \
+		__ret = __cgroup_bpf_run_filter_sk(sk, type); \
+	} \
+	__ret; \
 })
 
 #define BPF_CGROUP_RUN_PROG_INET_SOCK(sk)				       \
