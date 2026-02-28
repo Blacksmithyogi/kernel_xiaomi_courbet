@@ -23,8 +23,7 @@ jobs:
         include:
           - variant: "staging"
             root: "KSU"
-          - variant: "staging"
-            root: "NoKSU"
+          
 
     steps:
     - name: Checkout Source
