@@ -6,10 +6,10 @@
 SECONDS=0 # builtin bash timer
 
 # Allowed codenames
-ALLOWED_CODENAMES=("sweet" "courbet" "tucana" "toco" "phoenix" "davinci")
+ALLOWED_CODENAMES=("courbet")
 
 # Prompt user for device codename
-read -p "Enter device codename: " DEVICE
+read -p "Enter device codename: " courbet
 
 # Check if the entered codename is in the allowed list
 if [[ ! " ${ALLOWED_CODENAMES[@]} " =~ " ${DEVICE} " ]]; then
@@ -20,8 +20,8 @@ fi
 ZIPNAME="${DEVICE}-$(date '+%Y%m%d-%H%M').zip"
 
 export ARCH=arm64
-export KBUILD_BUILD_USER=giyokun07
-export KBUILD_BUILD_HOST=DESKTOP-NOOK8V1
+export KBUILD_BUILD_USER=EsTeh
+export KBUILD_BUILD_HOST=Vankof-DSTx
 export PATH="/mnt/d/pt/kernel/linux-x86/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04/bin/:$PATH"
 
 if [[ $1 = "-c" || $1 = "--clean" ]]; then
