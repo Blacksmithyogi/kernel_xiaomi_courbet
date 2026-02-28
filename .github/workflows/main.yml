@@ -1,0 +1,93 @@
+name: Build Kernel and Release
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      DATE: ${{ steps.setdate.outputs.DATE }}
+    steps:
+      - id: setdate
+        run: |
+          echo "DATE=$(TZ=Asia/Jakarta date +%Y%m%d%H%M)" >> $GITHUB_OUTPUT
+
+  build_kernel:
+    name: Build Kernel and Release
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      matrix:
+        include:
+          - variant: "staging"
+            root: "KSU"
+          - variant: "staging"
+            root: "NoKSU"
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+
+    - name: Set environment
+      run: |
+        echo "VARIANT=${{ matrix.variant }}" >> $GITHUB_ENV
+        echo "ROOT=${{ matrix.root }}" >> $GITHUB_ENV
+        echo "DATE=${{ needs.prepare.outputs.DATE }}" >> $GITHUB_ENV
+        echo "ARTIFACT=$GITHUB_WORKSPACE/artifact" >> $GITHUB_ENV
+
+    - name: Building
+      run: |
+        sudo apt install device-tree-compiler -y
+        mkdir -p ${{ env.ARTIFACT }}
+        chmod +x build.sh && ./build.sh ${{ env.ROOT }} ${{ env.DATE }} ${{ env.ARTIFACT }}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rethinking-${{ env.VARIANT }}-${{ env.ROOT }}-${{ env.DATE }}
+        path: ${{ env.ARTIFACT }}/*
+
+  create_release:
+    needs: [prepare, build_kernel]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup git authentication
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Cilok-LAB/android_kernel_xiaomi_surya
+
+      - name: Set DATE and TAG
+        run: |
+          echo "TAG=${{ needs.prepare.outputs.DATE }}" >> $GITHUB_ENV
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifact
+
+      - name: Create Git tag
+        run: |
+          git tag -a "$TAG" -m "imysm tirr"
+          git push origin "$TAG"
+
+      - name: Upload artifacts to release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.TAG }}
+          files: artifact/**
+          body: |
+            ### Notes
+            *Flash carefully. Do not interrupt the synchronization.*
+            *MIUI/HyperOS and AOSP/A support*
+            *Android 11-16 support*
