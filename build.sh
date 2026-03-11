@@ -1,81 +1,107 @@
 #!/bin/bash
-#
-# Compile script for kernel
-#
 
-SECONDS=0 # builtin bash timer
+# --- KONFIGURASI TELEGRAM ---
+TG_TOKEN="8647652050:AAG0ZKtMuE4NhlOKx8EHz4VHfgPLlguMTqw"
+TG_CHAT_ID="7540957411"
+# ----------------------------
 
-# Allowed codenames
-ALLOWED_CODENAMES=("sweet" "courbet" "tucana" "toco" "phoenix" "davinci")
-
-# Prompt user for device codename
-read -p "Enter device codename: " DEVICE
-
-# Check if the entered codename is in the allowed list
-if [[ ! " ${ALLOWED_CODENAMES[@]} " =~ " ${DEVICE} " ]]; then
-    echo "Error: Invalid codename. Allowed codenames are: ${ALLOWED_CODENAMES[*]}"
-    exit 1
-fi
+SECONDS=0 
+DEVICE="courbet"
+export ARCH=arm64
+export KBUILD_BUILD_USER=esteh
+export KBUILD_BUILD_HOST=TUF-FA5093
+export PATH="/mnt/d/pt/kernel/linux-x86/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04/bin/:$PATH"
 
 ZIPNAME="${DEVICE}-$(date '+%Y%m%d-%H%M').zip"
 
-export ARCH=arm64
-export KBUILD_BUILD_USER=giyokun07
-export KBUILD_BUILD_HOST=DESKTOP-NOOK8V1
-export PATH="/mnt/d/pt/kernel/linux-x86/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04/bin/:$PATH"
+# Fungsi untuk mengirim pesan pertama dan mendapatkan MESSAGE_ID
+tg_send_sticky() {
+    res=$(curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/sendMessage" \
+        -d chat_id="$TG_CHAT_ID" \
+        -d text="$1" \
+        -d parse_mode="Markdown")
+    MESSAGE_ID=$(echo $res | grep -oP '(?<="message_id":)\d+')
+}
 
+# Fungsi untuk mengedit pesan yang sudah ada (update status)
+tg_update() {
+    curl -s -X POST "https://api.telegram.org/bot$TG_TOKEN/editMessageText" \
+        -d chat_id="$TG_CHAT_ID" \
+        -d message_id="$MESSAGE_ID" \
+        -d text="$1" \
+        -d parse_mode="Markdown" > /dev/null
+}
+
+# --- MULAI PROSES ---
+echo "KUDA ASELI NAIL KUDA BESI"
+tg_send_sticky "🛠 **Kernel Build Update**
+📱 **Device**: \`$DEVICE\`
+👤 **User**: \`$KBUILD_BUILD_USER\`
+⏳ **Status**: nyapu lingkungan..."
+
+# 1. Step: Cleaning
 if [[ $1 = "-c" || $1 = "--clean" ]]; then
-	rm -rf out
-	echo "Cleaned output folder"
+    tg_update "🛠 **Kernel Build Update**
+⏳ **Status**: resik-resik folder out..."
+    rm -rf out
 fi
 
-echo -e "\nStarting compilation for $DEVICE...\n"
+# 2. Step: Config
+tg_update "🛠 **Kernel Build Update**
+⏳ **Status**: delok \`${DEVICE}_defconfig\`..."
 make O=out ARCH=arm64 ${DEVICE}_defconfig
-make -j$(nproc) \
+
+# 3. Step: Compiling (Ini tahap terlama)
+tg_update "🛠 **Kernel Build Update**
+⏳ **Status**: Sedang Kompilasi (Mengebut dengan Ninja 2T Olsam Motul... ⚡"
+make O=out ARCH=arm64 ${DEVICE}_defconfig
+make -j$(nproc --all) \
     O=out \
     ARCH=arm64 \
     LLVM=1 \
     LLVM_IAS=1 \
     CROSS_COMPILE=aarch64-linux-gnu- \
     CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-
+    
 kernel="out/arch/arm64/boot/Image.gz"
 dtbo="out/arch/arm64/boot/dtbo.img"
 dtb="out/arch/arm64/boot/dtb.img"
 
-if [ ! -f "$kernel" ] || [ ! -f "$dtbo" ] || [ ! -f "$dtb" ]; then
-	echo -e "\nCompilation failed!"
-	exit 1
+# Cek Gagal
+if [ ! -f "$kernel" ]; then
+    tg_update "❌ **Anjir Gagal cok**
+Error opokih. Log e rametu jing"
+    exit 1
 fi
 
-echo -e "\nKernel compiled successfully! Zipping up...\n"
-
-if [ -d "$AK3_DIR" ]; then
-	cp -r $AK3_DIR AnyKernel3
-else
-	if ! git clone -q https://github.com/basamaryan/AnyKernel3 -b master AnyKernel3; then
-		echo -e "\nAnyKernel3 repo not found locally and couldn't clone from GitHub! Aborting..."
-		exit 1
-	fi
-fi
-
-# Modify anykernel.sh to replace device names
+# 4. Step: Zipping
+tg_update "🛠 **Kernel Build Update**
+⏳ **Status**: Sek kompile sabar"
+[ -d "AnyKernel3" ] && rm -rf AnyKernel3
+git clone -q https://github.com/basamaryan/AnyKernel3 -b master AnyKernel3
 sed -i "s/device\.name1=.*/device.name1=${DEVICE}/" AnyKernel3/anykernel.sh
 sed -i "s/device\.name2=.*/device.name2=${DEVICE}in/" AnyKernel3/anykernel.sh
+cp $kernel AnyKernel3/
+[ -f "$dtbo" ] && cp $dtbo AnyKernel3/
+[ -f "$dtb" ] && cp $dtb AnyKernel3/
 
-cp $kernel AnyKernel3
-cp $dtbo AnyKernel3
-cp $dtb AnyKernel3
 cd AnyKernel3
 zip -r9 "../$ZIPNAME" * -x .git
 cd ..
 rm -rf AnyKernel3
-echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
-echo "Zip: $ZIPNAME"
 
-if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
-   head=$(git rev-parse --verify HEAD 2>/dev/null); then
-	HASH="$(echo $head | cut -c1-8)"
-fi
+# 5. Step: Final (Kirim File)
+DURATION="$((SECONDS / 60)) menit $((SECONDS % 60)) detik"
+tg_update "🛠 **Kernel Build Update**
+✅ **Status**: Sampe gus $DURATION! Sek upload gus.."
 
-telegram -f $ZIPNAME -M "Completed in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) ! Latest commit: $HASH"
+curl -F document=@"$ZIPNAME" \
+     -F chat_id="$TG_CHAT_ID" \
+     -F caption="✅ **Allhamdullilah!**
+📦 **File**: \`$ZIPNAME\`
+⏱ **Durasi**: $DURATION
+👤 **User**: $KBUILD_BUILD_USER" \
+     -F parse_mode="Markdown" \
+     "https://api.telegram.org/bot$TG_TOKEN/sendDocument"
+
+echo -e "\nSelesai!"
